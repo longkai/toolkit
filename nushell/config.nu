@@ -34,3 +34,5 @@ source ~/.cache/carapace/init.nu
 
 # https://starship.rs/#nushell
 use ~/.cache/starship/init.nu
+
+use mod.nu *

@@ -22,7 +22,6 @@ env:
   # github ctx https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/contexts#github-context
   IMAGE_NAME: ${{ github.repository_owner }}/toolkit
 
-
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
@@ -70,24 +69,12 @@ jobs:
     - name: setup nushell
       uses: hustcer/setup-nu@v3
       with:
-        version: "0.96.1"
-    - name: fetch latest toolkit version
+        check-latest: true
+    - name: fetch latest toolkit versions
       shell: nu {0}
       id: latest-versions
       run: |
-        def semver [
-            ver: string
-        ] {
-            $ver | parse "{major}.{minor}.{patch}"
-        }
-
-        def github-latest-version [
-            repository: string
-        ] {
-            http get $"https://api.github.com/repos/($repository)/releases/latest" |
-                get tag_name | 
-                str trim --left --char 'v'
-        }
+        use ${{ github.workspace }}/nushell/scripts *
 
         [
             [google/go-containerregistry CRANE_VERSION]
@@ -96,10 +83,9 @@ jobs:
             [carapace-sh/carapace-bin CARAPACE_VERSION]
             [starship/starship STARSHIP_VERSION]
         ] | each {|it|
-            github-latest-version $it.0 | $"($it.1)=($in)"
+            github latest-version $it.0 | $"($it.1)=($in)"
         } | str join "\n"
-          | $"LATEST_VERSIONS<<EOF\n($in)\nEOF\n"
-          | save -a $env.GITHUB_OUTPUT
+          | github multi-line-output LATEST_VERSIONS $in
 
     # Build and push Docker image with Buildx (don't push on PR)
     # https://github.com/docker/build-push-action
@@ -113,5 +99,4 @@ jobs:
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest,${{ secrets.DOCKER_USERNAME }}/toolkit:latest
         labels: ${{ steps.meta.outputs.labels }}
-        build-args: |
-          ${{ steps.latest-versions.outputs.LATEST_VERSIONS }}
+        build-args: ${{ steps.latest-versions.outputs.LATEST_VERSIONS }}
