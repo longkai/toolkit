@@ -20,7 +20,8 @@ env:
   REGISTRY: ghcr.io
   # github.repository as <account>/<repo>
   # github ctx https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/contexts#github-context
-  IMAGE_NAME: ${{ github.repository_owner }}/toolkit
+  IMAGE_NAME: ${{ github.repository }}
+  DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/toolkit
 
 jobs:
   build-and-push-image:
@@ -83,9 +84,10 @@ jobs:
             [carapace-sh/carapace-bin CARAPACE_VERSION]
             [starship/starship STARSHIP_VERSION]
         ] | each {|it|
-            github latest-version $it.0 | $"($it.1)=($in)"
+            $it.0 | github-action latest-version | $"($it.1)=($in)"
         } | str join "\n"
-          | github multi-line-output LATEST_VERSIONS $in
+        | github-action multi-line LATEST_VERSIONS
+        | save -a $env.GITHUB_OUTPUT
 
     # Build and push Docker image with Buildx (don't push on PR)
     # https://github.com/docker/build-push-action
@@ -97,6 +99,6 @@ jobs:
         provenance: false
         platforms: linux/amd64,linux/arm64
         push: ${{ github.event_name != 'pull_request' }}
-        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest,${{ secrets.DOCKER_USERNAME }}/toolkit:latest
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest,${{ env.DOCKER_IMAGE_NAME }}:latest
         labels: ${{ steps.meta.outputs.labels }}
         build-args: ${{ steps.latest-versions.outputs.LATEST_VERSIONS }}
