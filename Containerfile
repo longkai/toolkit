@@ -9,7 +9,7 @@ ARG STARSHIP_VERSION=1.20.1
 WORKDIR /root
 
 RUN apt-get update && apt-get install -y curl tcpdump iproute2 dnsutils netcat-openbsd iputils-tracepath iputils-ping iftop \
-        vim less zip \
+        vim less zip bzip2 \
         htop procps \
         mariadb-client redis-tools
 
@@ -89,9 +89,11 @@ RUN arch="$(uname -m)"; \
     tar zxvf carapace.tgz -C /usr/local/bin carapace; \
     rm -rf carapace.tgz
 
-ADD nushell /root/.config/nushell
+ADD nushell .config/nushell
+ADD .vimrc .vimrc
 
+# fix mysql client cjk encoding display issue
+ENV LANG="C.utf8"
 ENV PATH="$PATH:/opt/nushell"
 
-# ENTRYPOINT ["/opt/nushell/nu"]
 ENTRYPOINT ["sleep", "infinity"]
