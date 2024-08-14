@@ -1,5 +1,8 @@
 FROM debian:stable
 
+LABEL org.opencontainers.image.description="Kennylong's toolkit\
+currently mainly for containers/k8s/networking etc."
+
 ARG CRANE_VERSION=0.20.1
 ARG CIRCTL_VERSION=1.30.1
 ARG NUSHELL_VERSION=0.96.1
@@ -61,9 +64,10 @@ RUN arch="$(uname -m)"; \
     tar zxvf crane.tgz -C /usr/local/bin crane; \
     rm -rf crane.tgz
 
-RUN arch="$(uname -m)"; \
+RUN libc=gnu; \
+    arch="$(uname -m)"; \
     case "$arch" in \
-        aarch64) arch="aarch64" ;; \
+        aarch64) arch="aarch64"; libc="musl" ;; \
     esac; \
     os="$(uname -s)"; \
     case "$os" in \
@@ -76,7 +80,7 @@ RUN arch="$(uname -m)"; \
     tar zxvf nu.tgz -C /opt/nushell --strip-components=1; \
     rm -rf nu.tgz; \
     # starship \
-    curl -sSLo starship.tgz https://github.com/starship/starship/releases/download/v${STARSHIP_VERSION}/starship-${arch}-unknown-${os}-gnu.tar.gz; \
+    curl -sSLo starship.tgz https://github.com/starship/starship/releases/download/v${STARSHIP_VERSION}/starship-${arch}-unknown-${os}-${libc}.tar.gz; \
     tar zxvf starship.tgz -C /usr/local/bin; \
     rm -rf starship.tgz; \
     # carapace \
