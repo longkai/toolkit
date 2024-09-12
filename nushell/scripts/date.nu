@@ -11,4 +11,16 @@ export def "to-timestamp" [
     }) | into int
 }
 
-# reverse is `into datetime` whose input is a nanosecond
+# Creates a datetime from the number of non-leap timestamp since January 1, 1970 0:00:00.000 UTC (aka “UNIX timestamp”).
+# The default unit is seconds, change it with `unit` flag.
+export def "from-timestamp" [
+    --unit (-u): string = "sec" # Unit to parse number from, one of [ns us ms sec(default)]
+    --timezone: string = "local"
+]: int -> datetime {
+    $in * (10 ** match $unit {
+        "ns" => 0
+        "us" => 3
+        "ms" => 6
+        _ => 9
+    }) | into datetime --timezone $timezone
+}

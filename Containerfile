@@ -12,7 +12,7 @@ ARG STARSHIP_VERSION=1.20.1
 WORKDIR /root
 
 RUN apt-get update && apt-get install -y curl tcpdump iproute2 dnsutils netcat-openbsd iputils-tracepath iputils-ping iftop \
-        vim less zip bzip2 \
+        vim less file zip bzip2 \
         htop procps \
         mariadb-client redis-tools
 
