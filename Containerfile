@@ -89,7 +89,7 @@ RUN libc=gnu; \
         x86_64) arch="amd64" ;; \
         aarch64) arch="arm64" ;; \
     esac; \
-    curl -sSLo carapace.tgz https://github.com/carapace-sh/carapace-bin/releases/download/v${CARAPACE_VERSION}/carapace-bin_${os}_${arch}.tar.gz; \
+    curl -sSLo carapace.tgz https://github.com/carapace-sh/carapace-bin/releases/download/v${CARAPACE_VERSION}/carapace-bin_${CARAPACE_VERSION}_${os}_${arch}.tar.gz; \
     tar zxvf carapace.tgz -C /usr/local/bin carapace; \
     rm -rf carapace.tgz
 
