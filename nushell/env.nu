@@ -1,10 +1,11 @@
+# https://www.nushell.sh/book/configuration.html
+const aliases = ($nu.temp-path | path join "alias.nu")
+
 if ([
     /usr/local/bin/brew
     /opt/homebrew/bin/brew
     /home/linuxbrew/.linuxbrew/bin/brew
-] | each {|x|
-    $x | path exists
-} | any {|x| $x }) {
+] | any {|it| $it | path exists }) {
     # dev daily
     $env.HOMEBREW_PREFIX = match [$nu.os-info.name $nu.os-info.arch] {
         ["macos" "x86_64"] => (/usr/local/bin/brew --prefix),
@@ -13,8 +14,8 @@ if ([
     }
     $env.HOMEBREW_CELLAR = $'($env.HOMEBREW_PREFIX)/Cellar'
     $env.HOMEBREW_REPOSITORY = $'($env.HOMEBREW_PREFIX)/Homebrew'
-    $env.MANPATH = ($env.MANPATH? | default '' | split row (char esep) | prepend [$'($env.HOMEBREW_PREFIX)/share/man'])
-    $env.INFOPATH = ($env.INFOPATH? | default '' | split row (char esep) | prepend [$'($env.HOMEBREW_PREFIX)/share/info'])
+    $env.MANPATH = $env.MANPATH? | default '' | split row (char esep) | prepend [$'($env.HOMEBREW_PREFIX)/share/man']
+    $env.INFOPATH = $env.INFOPATH? | default '' | split row (char esep) | prepend [$'($env.HOMEBREW_PREFIX)/share/info']
 
     $env.PATH = [
         $'($env.HOME)/mambaforge/bin'
@@ -22,30 +23,30 @@ if ([
         $'($env.HOMEBREW_PREFIX)/sbin'
         $'($env.HOME)/.cargo/bin'
         $'($env.HOME)/go/bin'
-    ] ++ ($env.PATH | split row (char esep))
-    $env.PATH = ($env.PATH | uniq)
+    ] ++ $env.PATH
+    $env.PATH = $env.PATH | uniq
 
-        let alias = r#'alias vi = vim
+    $"alias vi = vim
 alias docker = nerdctl
 alias du = dust
 alias find = fd
 alias grep = rg
-alias cat = bat --theme="Solarized (dark)"
-'#
-    $alias | save -f /tmp/alias.nu
+alias cat = bat --theme='Solarized \(dark\)' # better with nushell's theme style?
+" | save -f $aliases
 } else {
     # casual usage
-    $env.PATH = [
+    $env.PATH ++= [
         ($nu.current-exe | path dirname)
-    ] ++ ($env.PATH | split row (char esep))
+    ]
     $env.PATH = ($env.PATH | uniq)
 
-    "" | save -f /tmp/alias.nu
+    'alias grep = grep --color=auto' | save -f $aliases
 }
 
 load-env {
-    # EDITOR: code
-    # KUBE_EDITOR: vim # 'code --wait'
+    EDITOR: vim
+    KUBE_EDITOR: vim # 'code --wait'
+    KUBECTL_EXTERNAL_DIFF: 'diff -u -N --color=auto' # work with `kubectl diff`
 }
 
 # https://carapace-sh.github.io/carapace-bin/setup.html#nushell
