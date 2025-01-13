@@ -1,6 +1,4 @@
 # https://www.nushell.sh/book/configuration.html
-const aliases = ($nu.temp-path | path join "alias.nu")
-
 if ([
     /usr/local/bin/brew
     /opt/homebrew/bin/brew
@@ -32,7 +30,7 @@ alias du = dust
 alias find = fd
 alias grep = rg
 alias cat = bat --theme='Solarized \(dark\)' # better with nushell's theme style?
-" | save -f $aliases
+" | save -f ($nu.temp-path | path join "alias.nu")
 } else {
     # casual usage
     $env.PATH ++= [
@@ -40,13 +38,14 @@ alias cat = bat --theme='Solarized \(dark\)' # better with nushell's theme style
     ]
     $env.PATH = ($env.PATH | uniq)
 
-    'alias grep = grep --color=auto' | save -f $aliases
+    'alias grep = grep --color=auto' | save -f ($nu.temp-path | path join "alias.nu")
 }
 
 load-env {
     EDITOR: vim
     KUBE_EDITOR: vim # 'code --wait'
     KUBECTL_EXTERNAL_DIFF: 'diff -u -N --color=auto' # work with `kubectl diff`
+    NU_LOG_LEVEL: DEBUG
 }
 
 # https://carapace-sh.github.io/carapace-bin/setup.html#nushell

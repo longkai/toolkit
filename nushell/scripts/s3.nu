@@ -7,7 +7,7 @@ def "from aws toml" []: string -> record {
         | from toml
 }
 
-def get-config [
+export def get-config [
     --access-key: string
     --secret-key: string
     --region: string
@@ -62,6 +62,8 @@ def virtual-host [
 
 # generate aws s3 presigned url with the s3uri, or with the input.
 #
+# reference doc: https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
+#
 # Examples:
 #
 # - GET presigned url: s3 presign "s3://my-bucket/path/to/file.txt"
@@ -107,7 +109,7 @@ export def presign [
         | upsert 'X-Amz-Expires' ($expires_in / 1sec)
         | upsert 'X-Amz-SignedHeaders' 'host'
     let canonicalRequest = [
-        $method
+        ($method | str upcase)
         ([$endpoint_url $path] | path join)
         ($query | url build-query | split row '&' | sort | str join '&')
         (

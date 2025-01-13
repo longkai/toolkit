@@ -1,5 +1,6 @@
 #!/usr/bin/env -S nu --stdin
 use helper *
+use s3 *
 
 # turn '<registry>/<namespace>/<repo>:<tag>' to '<repo>/<tag>.tar'
 def "into local-file-name" []: string -> string {
@@ -196,6 +197,7 @@ def dl [
 }
 
 # push oci images to the remote registry.
+#
 # input may be one of: [another registry, a downloadable tar like s3, a local image or a local tarball]
 # helm chart is also support
 export def "push registry" [
@@ -212,10 +214,10 @@ export def "push registry" [
     $in | par-each {|it|
         let tarball = $it | dl --platform $platform
         let ref = $tarball | parse-oci-manifest
-        let registry = $registry | or-default $ref.registry
-        let ns = $namespace | or-default ($ref.namespace | or-default 'library')
-        let name = $name | or-default $ref.name
-        let tag = $tag | or-default ($ref.tag | or-default 'latest')
+        let registry = $registry | default $ref.registry
+        let ns = $namespace | default $ref.namespace | default 'library'
+        let name = $name | default $ref.name
+        let tag = $tag | default $ref.tag | default 'latest'
 
         let dst = [$registry $ns $name] | path join | $in + ':' + $tag
         $tarball | helm-chart-oci | if $in != $tarball {
@@ -236,7 +238,8 @@ export def "push registry" [
     }
 }
 
-# import oci images from downloadable urls or local tarballs.
+# import images from urls or local tarballs, concurrently.
+#
 # it will auto-detect use `docker` or `ctr`.
 export def import []: [
     string -> nothing
@@ -264,21 +267,21 @@ export def import []: [
 
 # upload(sync) oci images into s3 and given back the pre-signed download urls.
 export def "push s3" [
-    --bucket: string # the s3 bucket to put, if not present use $env.S3_BUCKET
-    --endpoint-url: string # the s3 endpoint-url to put, if not present use $env.S3_ENDPOINT_URL
+    --bucket: string # the s3 bucket to put, default to `~/.aws/credentials` [default] profile
+    --endpoint-url: string # the s3 endpoint-url to put, default to `~/.aws/credentials` [default] profile
     --platform: string
     --expires-in: duration = 6hr
 ]: [
     string -> record<url: string, image: string>
     list<string> -> list<record<url: string, image: string>>
 ] {
-    let bucket = $bucket | option-or-env S3_BUCKET
-    let platform = $platform | or-default (default-platform)
-    let endpoint_url = $endpoint_url | option-or-env S3_ENDPOINT_URL
+    let config = get-config --endpoint-url $endpoint_url
+    let bucket = $bucket | default $config.bucket
+    let platform = $platform | default (default-platform)
     $in | par-each {|it|
         $it | pull --platform $platform
-        | s3-sync --bucket $bucket --endpoint-url $endpoint_url
-        | aws s3 presign --expires-in ($expires_in / 1sec) $'s3://([$bucket $in] | path join)' --endpoint-url $endpoint_url
+        | s3-sync --bucket $bucket --endpoint-url $config.endpoint_url
+        | aws s3 presign --expires-in ($expires_in / 1sec) $'s3://([$bucket $in] | path join)' --endpoint-url $config.endpoint_url
         | {
             url: $in
             image: $it
