@@ -16,11 +16,17 @@ export def "to-timestamp" [
 export def "from-timestamp" [
     --unit (-u): string = "sec" # Unit to parse number from, one of [ns us ms sec(default)]
     --timezone: string = "local"
+    --offset: int
 ]: int -> datetime {
     $in * (10 ** match $unit {
         "ns" => 0
         "us" => 3
         "ms" => 6
         _ => 9
-    }) | into datetime --timezone $timezone
+    }) | if $offset == null {
+        $in | into datetime --timezone $timezone
+    } else {
+        $in | into datetime --offset $offset
+    }
+    # unix timestamp could specify timezone, offset has high priority and timezone must be one of [utc, local]
 }

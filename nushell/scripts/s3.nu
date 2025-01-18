@@ -92,7 +92,7 @@ export def presign [
     let bucket = if ($s3_proto.bucket | is-not-empty) { $s3_proto.bucket } else { $config.bucket }
     let path = $s3_proto.path
     let region = $config.region
-    let now = if $now == null { date now | date to-timezone utc } else { $now }
+    let now = $now | default (date now | date to-timezone utc)
     let endpoint_url = $config.endpoint_url
     let virtual_host = $endpoint_url | virtual-host $bucket
     let path = if $virtual_host == $endpoint_url { ['/' $bucket $path]  | path join } else { ['/' $path] | path join }
