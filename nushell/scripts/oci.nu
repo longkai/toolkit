@@ -1,5 +1,4 @@
 #!/usr/bin/env -S nu --stdin
-use helper *
 use s3 *
 
 # turn '<registry>/<namespace>/<repo>:<tag>' to '<repo>/<tag>.tar'
@@ -196,9 +195,9 @@ def dl [
     }
 }
 
-# push oci images to the remote registry.
+# Push oci images to the remote registry.
 #
-# input may be one of: [another registry, a downloadable tar like s3, a local image or a local tarball]
+# Input may be one of: [another registry, a downloadable tar like s3, a local image or a local tarball]
 # helm chart is also support
 export def "push registry" [
     registry?: string # the remote registry host, if null pushing to the image tag itself.
@@ -238,9 +237,9 @@ export def "push registry" [
     }
 }
 
-# import images from urls or local tarballs, concurrently.
+# Import images from urls or local tarballs, concurrently.
 #
-# it will auto-detect use `docker` or `ctr`.
+# It will auto-detect use `docker` or `ctr`.
 export def import []: [
     string -> nothing
     list<string> -> nothing
@@ -265,7 +264,60 @@ export def import []: [
     }
 }
 
-# upload(sync) oci images into s3 and given back the pre-signed download urls.
+# Import images to the remote hosts using scp/ssh.
+#
+# The input is the output from `push s3` command.
+export def "import ssh" [
+    # hosts: list<record<host: string, user?: string, port?: int>> # the ssh/scp remote targets, default to all k8s nodes
+    hosts?: list<record> # the ssh/scp remote targets with `record<host: string, user?: string, port?: int>`, default to all k8s nodes
+    --ctr-or-docker: string # the remote host use `docker` or `ctr` or other command you can specify to import oci images to local
+    --user: string = 'root' # the default ssh remote user, if not specify with `hosts` positional arg
+    --port: int = 22 # the default ssh remote port, if not specify with `hosts` positional arg
+]: [
+    record<url: string, image: string> -> nothing
+    list<record<url: string, image: string>> -> nothing
+] {
+    let tarballs = $in | par-each {|it|
+        let dst = mktemp -t oci-image.XXXX
+        curl -o $dst -L $it.url
+        $dst
+    }
+
+    let hosts = if $hosts == null {
+        kubectl get nodes -o wide | from ssv | get INTERNAL-IP | each {|host|
+            {
+                host: $host
+                user: $user
+                port: $port
+            }
+        }
+    } else { $hosts }
+    let cmd = if $ctr_or_docker == null {
+        kubectl get node -o wide | from ssv | get CONTAINER-RUNTIME | first | str starts-with 'containerd://' | if $in { 'ctr' } else { 'docker' }
+    } else { $ctr_or_docker }
+
+    let shell = $tarballs | each {|file|
+        if $cmd == 'ctr' {
+            $'ctr -n k8s.io i import ($file)' # Note: --base-name foo/bar
+        } else {
+            $'$(cmd) load -i ($file)'
+        } | $'($in); rm -rf ($file);'
+    } | prepend 'PATH=/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin ' | str join ''
+
+    $hosts | each {|it|
+        let port = $it.port? | default 22
+        let user = $it.user? | default root
+        let remote = [$user $it.host] | str join '@'
+
+        log debug $'scp oci tarballs to ($remote)...'
+        scp -P $port ...$tarballs $'($remote):/tmp'
+
+        log debug $'ssh to load oci tarballs to ($remote) with: ($shell)'
+        ssh $remote -p $port $'sh -c "($shell)"'
+    }
+}
+
+# Upload(sync) oci images into s3 and given back the pre-signed download urls.
 export def "push s3" [
     --bucket: string # the s3 bucket to put, default to `~/.aws/credentials` [default] profile
     --endpoint-url: string # the s3 endpoint-url to put, default to `~/.aws/credentials` [default] profile

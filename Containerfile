@@ -13,7 +13,7 @@ WORKDIR /root
 
 RUN apt-get update && apt-get install -y curl tcpdump iproute2 dnsutils netcat-openbsd iputils-tracepath iputils-ping iftop \
         vim less file zip bzip2 \
-        htop procps \
+        htop procps ssh \
         mariadb-client redis-tools
 
 # the apt-get awscli is too old and the auto-completion is not work
