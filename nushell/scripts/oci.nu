@@ -276,7 +276,7 @@ export def "push s3" [
     list<string> -> list<record<url: string, image: string>>
 ] {
     let config = get-config --endpoint-url $endpoint_url
-    let bucket = $bucket | default $config.bucket
+    let bucket = $bucket | default $config.bucket?
     let platform = $platform | default (default-platform)
     $in | par-each {|it|
         $it | pull --platform $platform

@@ -16,15 +16,16 @@ RUN apt-get update && apt-get install -y curl tcpdump iproute2 dnsutils netcat-o
         htop procps \
         mariadb-client redis-tools
 
-# the apt-get awscli is too old and the auto-completeion is not work
+# the apt-get awscli is too old and the auto-completion is not work
 # https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+# FIXME: the latest version is broken, so we stay in 2.22.35
 RUN arch="$(uname -m)"; \
     os="$(uname -s)"; \
     case "$os" in \
         Linux) os="linux" ;; \
         Darwin) os="osx" ;; \
     esac; \
-    curl "https://awscli.amazonaws.com/awscli-exe-${os}-${arch}.zip" -o "awscliv2.zip"; \
+    curl "https://awscli.amazonaws.com/awscli-exe-${os}-${arch}-2.22.35.zip" -o "awscliv2.zip"; \
     unzip awscliv2.zip; \
     ./aws/install; \
     rm -rf aws awscliv2.zip
