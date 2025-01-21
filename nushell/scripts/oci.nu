@@ -264,12 +264,32 @@ export def import []: [
     }
 }
 
+def resolve-hosts []: any -> any {
+    let input = $in
+    let type = $input | describe
+    match $type {
+        string => { host: $input }
+        list<string> => ( $input | each {|| { host: $in } } )
+        $x if $x starts-with record => (match $input {
+            {host: _} => $input
+            _ => { error make { msg: $"invalid record type ($x), no `host` field found" } }
+        })
+        nothing => {
+            log debug $'nothing input, try list k8s nodes'
+            kubectl get nodes -o wide | from ssv | get INTERNAL-IP | each {|host|
+                { host: $host }
+            }
+        }
+        _ => $input # anyway, just try to get `host` from input
+    }
+}
+
 # Import images to the remote hosts using scp/ssh.
 #
 # The input is the output from `push s3` command.
 export def "import ssh" [
     # hosts: list<record<host: string, user?: string, port?: int>> # the ssh/scp remote targets, default to all k8s nodes
-    hosts?: list<record> # the ssh/scp remote targets with `record<host: string, user?: string, port?: int>`, default to all k8s nodes
+    hosts?: any # the ssh/scp remote targets one of [string(host), list<string(host)>, record<host: string, user?: string, port?: int>, or a list of the that record], default to all k8s nodes
     --ctr-or-docker: string # the remote host use `docker` or `ctr` or other command you can specify to import oci images to local
     --user: string = 'root' # the default ssh remote user, if not specify with `hosts` positional arg
     --port: int = 22 # the default ssh remote port, if not specify with `hosts` positional arg
@@ -280,18 +300,10 @@ export def "import ssh" [
     let tarballs = $in | par-each {|it|
         let dst = mktemp -t oci-image.XXXX
         curl -o $dst -L $it.url
-        $dst
-    }
+        [ $dst ]
+    } | flatten # always be an array since var args below
 
-    let hosts = if $hosts == null {
-        kubectl get nodes -o wide | from ssv | get INTERNAL-IP | each {|host|
-            {
-                host: $host
-                user: $user
-                port: $port
-            }
-        }
-    } else { $hosts }
+    let hosts = $hosts | resolve-hosts
     let cmd = if $ctr_or_docker == null {
         kubectl get node -o wide | from ssv | get CONTAINER-RUNTIME | first | str starts-with 'containerd://' | if $in { 'ctr' } else { 'docker' }
     } else { $ctr_or_docker }
@@ -300,13 +312,13 @@ export def "import ssh" [
         if $cmd == 'ctr' {
             $'ctr -n k8s.io i import ($file)' # Note: --base-name foo/bar
         } else {
-            $'$(cmd) load -i ($file)'
+            $'($cmd) load -i ($file)'
         } | $'($in); rm -rf ($file);'
     } | prepend 'PATH=/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin ' | str join ''
 
     $hosts | each {|it|
-        let port = $it.port? | default 22
-        let user = $it.user? | default root
+        let port = $it.port? | default $port
+        let user = $it.user? | default $user
         let remote = [$user $it.host] | str join '@'
 
         log debug $'scp oci tarballs to ($remote)...'
