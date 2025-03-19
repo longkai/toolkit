@@ -63,13 +63,10 @@ def virtual-host [
 # generate aws s3 presigned url with the s3uri, or with the input.
 #
 # reference doc: https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
-#
-# Examples:
-#
-# - GET presigned url: s3 presign "s3://my-bucket/path/to/file.txt"
-# - PUT presigned url with expiry: "s3 presign "s3://my-bucket/path/to/file.txt" --method PUT --expires-in 2hr
-# - use input pipeline: "s3://my-bucket/path/to/file.txt" | s3 presign
-# - use `bucket` in `~/.aws/credentials` [default] profile: "s3:///path/to/file.txt" | s3 presign
+@example "Generate a GET pre-signed URL" { s3 presign "s3://my-bucket/path/to/file.txt" } --result https://example.com/...
+@example "Generate a PUT pre-signed URL" { s3 presign "s3://my-bucket/path/to/file.txt" --method PUT --expires-in 2hr } --result https://example.com/...
+@example "Generate with an input pipeline" { "s3://my-bucket/path/to/file.txt" | s3 presign } --result https://example.com/...
+@example "Generate with the `bucket` field defined in `~/.aws/credentials` [default] profile" { "s3:///path/to/file.txt" | s3 presign } --result https://example.com/...
 export def presign [
     s3uri?: string # aka. `s3://<bucket>/path/to/obj`, default use `$in`
     --access-key: string # aws access key, default to `~/.aws/credentials` [default] profile
