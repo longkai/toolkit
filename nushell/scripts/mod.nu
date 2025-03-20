@@ -1,7 +1,6 @@
 use std log
 export-env { use std log [] } # Run a block and preserve its environment in a current scope.
 
-export module helper.nu
 export module date.nu
 export module git.nu
 export module k8s.nu

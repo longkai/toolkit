@@ -1,4 +1,4 @@
-use helper *
+use ./helper.nu *
 
 def "from aws toml" []: string -> record {
     $in | path expand | open $in
@@ -68,7 +68,7 @@ def virtual-host [
 @example "Generate with an input pipeline" { "s3://my-bucket/path/to/file.txt" | s3 presign } --result https://example.com/...
 @example "Generate with the `bucket` field defined in `~/.aws/credentials` [default] profile" { "s3:///path/to/file.txt" | s3 presign } --result https://example.com/...
 export def presign [
-    s3uri?: string # aka. `s3://<bucket>/path/to/obj`, default use `$in`
+    s3uri?: string # aka. `s3://<bucket>/path/to/object`, default use `$in` pipeline
     --access-key: string # aws access key, default to `~/.aws/credentials` [default] profile
     --secret-key: string # aws secret key, default to `~/.aws/credentials` [default] profile
     --now: datetime # default use current time
