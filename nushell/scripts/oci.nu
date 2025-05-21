@@ -70,7 +70,7 @@ def parse-oci-manifest []: string -> record<registry: string, namespace: string,
     const manifest = 'manifest.json'
     let input = $in
     try {
-        tar tf $input | grep $'^($manifest)$'
+        tar tf $input | grep -q $'^($manifest)$'
         tar xf $input $manifest
         let out = open manifest.json | get 0.RepoTags.0 | parse-oci-image-ref
         rm $manifest
@@ -114,7 +114,7 @@ def helm-chart-oci []: string -> string {
     | if $in {
         let dst = mktemp -t oci-chart.XXXX
         log debug $'($input) is a helm chart and transform it to ($dst)'
-        open ([$dir manifest.json] | path join) | get 0.Layers.0 | cp $in $dst
+        open ([$dir manifest.json] | path join) | get 0.Layers.0 | cp ([$dir $in] | path join) $dst
         $dst
     } else {
         $input
