@@ -187,7 +187,7 @@ def dl [
             $out
         }
         'file' => {
-            [$url.host $url.path] | filter { |it| $it != '/' } | path join
+            [$url.host $url.path] | where $it != '/' | path join
         }
         _ => {
             $input | pull --platform $platform

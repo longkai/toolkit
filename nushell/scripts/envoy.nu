@@ -40,7 +40,7 @@ export def parse-access-log [
         if not $strip_missing_value {
             return $entry
         }
-        let rejects = $entry | items { |k,v| if ($v | is-empty) { $k } else { '' } } | filter {|it| $it != '' }
+        let rejects = $entry | items { |k,v| if ($v | is-empty) { $k } else { '' } } | where $it != ''
         $entry | reject ...$rejects
     }
 }
