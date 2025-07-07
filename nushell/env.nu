@@ -51,10 +51,7 @@ load-env {
 # https://carapace-sh.github.io/carapace-bin/setup.html#nushell
 $env.CARAPACE_BRIDGES = 'zsh,fish,bash,inshellisense' # optional
 mkdir ~/.cache/carapace
-carapace _carapace nushell
-  # TODO: remove it after carapace upgrading to 1.3.3
-  | str replace 'default $carapace_completer completer' 'default { $carapace_completer } completer'
-  | save --force ~/.cache/carapace/init.nu
+carapace _carapace nushell | save --force ~/.cache/carapace/init.nu
 
 # https://starship.rs/#nushell
 mkdir ~/.cache/starship
