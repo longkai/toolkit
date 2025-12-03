@@ -3,7 +3,8 @@ use s3 *
 
 # turn '<registry>/<namespace>/<repo>:<tag>' to '<repo>/<tag>.tar'
 def "into local-file-name" []: string -> string {
-    $in | path split | last | split row ':' | path join | $in + '.tar'
+    let dict = $in | parse-oci-image-url
+    [$dict.name ($dict.digest | default $dict.tag)] | path join | $in + ".tar"
 }
 
 # download the input oci image url as a local tarball in the current dir.
@@ -43,17 +44,49 @@ def s3-sync [
     }
 }
 
-def parse-oci-image-ref []: string -> record<registry: string, namespace: string, name: string, tag: string, digest: string> {
-    mut input = $in
-    if $input starts-with 'docker.io/' {
-        $input = ($input | str substring ('docker.io/' | str length)..)
+def parse-oci-image-url []: string -> record<registry: string, namespace: string, name: string, tag: string, digest: string, full_url: string> {
+    # 1 => nginx
+    # 2 => library/nginx
+    # 3 => registry/library/nginx
+    # 4 => registry/main/sub/nginx
+
+    # TODO: change to mirror?
+    let segs = $in | split row '/'
+    let ref = $segs | last
+    match ($segs | length) {
+        1 => {
+            registry: 'docker.io'
+            namespace: 'library'
+        }
+        2 => {
+            registry: 'docker.io'
+            namespace: ($segs | first)
+        }
+        _ => {
+            registry: ($segs | first)
+            namespace: ($segs | slice 1..-2 | str join '/')
+        }
+    } | merge ($segs | last | parse-oci-image-ref) | upsert full_url {|dict|
+        let url = [$dict.registry $dict.namespace $dict.name] | str join '/'
+        if ($dict.digest | is-not-empty) {
+            $url + '@' + $dict.digest
+        } else {
+            $url + ":" + $dict.tag
+        }
     }
-    if $input starts-with 'library/' {
-        $input = ($input | str substring ('library/' | str length)..)
+}
+
+def parse-oci-image-ref []: string -> record<name: string, tag: string, digest: string> {
+    let segs = $in | split row '@'
+    let digest =  $segs | get 1?
+    let segs = $segs | first | split row ':'
+    # digest has the highest priority
+    let tag = if ($digest | is-not-empty) { null } else { $segs | get 1? | default 'latest' }
+    {
+        name: ($segs | first)
+        tag: $tag
+        digest: $digest
     }
-    $input
-    | parse --regex r#'^(?:(?P<registry>[a-zA-Z0-9._-]+(?:\:[0-9]+)?)\/)?(?:(?P<namespace>[a-z0-9]+(?:[._-][a-z0-9]+)*)\/)?(?P<name>[a-z0-9]+(?:[._-][a-z0-9]+)*)(?::(?P<tag>[a-zA-Z0-9._-]+))?(?:@(?P<digest>sha256:[a-f0-9]{64}))?$'#
-    | into record
 }
 
 def default-platform []: nothing -> string {
@@ -72,7 +105,7 @@ def parse-oci-manifest []: string -> record<registry: string, namespace: string,
     try {
         tar tf $input | grep -q $'^($manifest)$'
         tar xf $input $manifest
-        let out = open manifest.json | get 0.RepoTags.0 | parse-oci-image-ref
+        let out = open manifest.json | get 0.RepoTags.0 | parse-oci-image-url
         rm $manifest
         $out
     } catch { |err|
@@ -137,7 +170,7 @@ def dl [
         # local has a high priority since the remote it's also pushed from locally.
         # try `docker` instead `ctr` cannot build image itself.
 
-        let ref = $input | parse-oci-image-ref
+        let ref = $input | parse-oci-image-url
         log debug $'ref parse: ($ref)'
         if ($ref | is-empty) {
             log debug $'cannot parse as a oci image ref ($input)'
@@ -153,10 +186,10 @@ def dl [
         let cmd = if (which docker | is-not-empty) {
             docker images
         } else if (which nerdctl | is-not-empty) {
-            docker images
+            nerdctl images
         } else { # TODO(kennylong): use ctr export?
             log debug $'no docker or nerdctl found, use remote: ($input)'
-            return $input
+            return $ref.full_url
         }
         let images = $cmd | from ssv
         | where REPOSITORY == $repo and PLATFORM == $platform # TODO(kennylong): what if platform for all?
@@ -174,6 +207,7 @@ def dl [
         log debug $'use remote image: ($input)'
         $input
     }
+    log debug $'full url: ($url)'
     let url = try {
         $url | url parse
     } catch { |err|
