@@ -15,11 +15,12 @@ def pull [
 ]: string -> string {
     let url = $in
     let dst = $url | into local-file-name
+    let ref = $url | parse-oci-image-url
     $dst | path dirname | mkdir $in # TODO(kennylong): how to do it in a chain without break?
     $dst
-    | if $force or not ($in | path exists) or ($in | path parse | $in.stem == 'latest') {
+    | if $force or not ($in | path exists) or ($ref.tag == 'latest') {
         log info $'downloading ($url) to ($in)'
-        crane pull --platform $platform $url $in
+        crane pull --platform $platform $ref.full_url $in
         $in
     } else {
         log info $'($in) already exists'
@@ -44,13 +45,18 @@ def s3-sync [
     }
 }
 
+def is-tencent-cloud []: nothing -> bool {
+    try {
+        cat /sys/devices/virtual/dmi/id/sys_vendor | $in == "Tencent Cloud"
+    } catch { false }
+}
+
 def parse-oci-image-url []: string -> record<registry: string, namespace: string, name: string, tag: string, digest: string, full_url: string> {
     # 1 => nginx
     # 2 => library/nginx
     # 3 => registry/library/nginx
     # 4 => registry/main/sub/nginx
 
-    # TODO: change to mirror?
     let segs = $in | split row '/'
     let ref = $segs | last
     match ($segs | length) {
@@ -66,7 +72,12 @@ def parse-oci-image-url []: string -> record<registry: string, namespace: string
             registry: ($segs | first)
             namespace: ($segs | slice 1..-2 | str join '/')
         }
-    } | merge ($segs | last | parse-oci-image-ref) | upsert full_url {|dict|
+    } | merge ($segs | last | parse-oci-image-ref) | upsert registry { |dict|
+        # TODO: change to mirror in different vendor?
+        if (is-tencent-cloud) and ($dict.registry == 'docker.io') {
+            'mirror.ccs.tencentyun.com'
+        } else { $dict.registry }
+    } | upsert full_url {|dict|
         let url = [$dict.registry $dict.namespace $dict.name] | str join '/'
         if ($dict.digest | is-not-empty) {
             $url + '@' + $dict.digest
@@ -177,7 +188,7 @@ def dl [
             return $input
         }
         let repo = $ref | [$in.registry $in.namespace $in.name] | path join
-        # digest has the highest priority and ignore tag if tag is present
+        # digest has the highest priority and ignore tag if digest is present
         # if no digest, use tag, if no tag, tag is latest
         # if no tag, but digest, use digest
         let digest = if ($ref.digest | is-empty) { '' } else { $ref.digest | str substring ('sha256:' | str length).. }
@@ -274,9 +285,10 @@ export def "push registry" [
 # Import images from urls or local tarballs, concurrently.
 #
 # It will auto-detect use `docker` or `ctr`.
+@example "download a image tarball from the url then import into local node" { "https://..." | oci import } --result docker.io/library/nginx:latest
 export def import []: [
-    string -> nothing
-    list<string> -> nothing
+    string -> string
+    list<string> -> list<string>
 ] {
     let input = $in
     $in | par-each {|it|
@@ -315,6 +327,26 @@ def resolve-hosts []: any -> any {
             }
         }
         _ => $input # anyway, just try to get `host` from input
+    }
+}
+
+# Import images to all the k8s daemonset nodes. Note the daemonset must mount containerd socket and `ctr` binary.
+#
+@example "download an image tarball url then import into all k8s daemonset nodes" { "https://..." | oci import daemonset -n default -l name=toolkit } --result [docker.io/library/app:latest]
+@example "like above, but with a list of url" { "[https://...]" | oci import daemonset -n default -l name=toolkit } --result [[docker.io/library/app:latest]]
+export def "import daemonset" [
+    --selector (-l): string = ''
+    --namespace (-n): string = ''
+]: [
+    string -> string
+    list<string> -> list<string>
+ ] {
+    let input = $in | to json
+    kubectl get po -n $namespace -l $selector -owide | from ssv | par-each --keep-order { |it|
+        log info $'executing pod ($it.NAME) on ($it.NODE)'
+        kubectl exec -n $namespace $it.NAME -- nu --login -c $"($input) | oci import"
+    } | each { |it|
+        $it | lines | last | parse "{_} {image} {_}" | get image.0
     }
 }
 
