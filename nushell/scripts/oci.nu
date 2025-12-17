@@ -154,7 +154,7 @@ def helm-chart-oci []: string -> string {
     let dir = mktemp --directory
     tar xf $in -C $dir
     let conf = open ([$dir manifest.json] | path join) | get 0.Config
-    let out = open ([$dir $conf] | path join) | from json | get type? | $in in [application library]
+    let out = open ([$dir $conf] | path join) | get type? | $in in [application library]
     | if $in {
         let dst = mktemp -t oci-chart.XXXX
         log debug $'($input) is a helm chart and transform it to ($dst)'
@@ -177,6 +177,13 @@ def dl [
             log debug $'a local file already exists: ($input)'
             return $'file://($input)'
         }
+
+        try {
+            # a downloadable tarball url
+            $input | url parse
+            return $input
+        } catch { }
+
         # remote registry or local registry?
         # local has a high priority since the remote it's also pushed from locally.
         # try `docker` instead `ctr` cannot build image itself.
@@ -335,8 +342,8 @@ def resolve-hosts []: any -> any {
 @example "download an image tarball url then import into all k8s daemonset nodes" { "https://..." | oci import daemonset -n default -l name=toolkit } --result [docker.io/library/app:latest]
 @example "like above, but with a list of url" { "[https://...]" | oci import daemonset -n default -l name=toolkit } --result [[docker.io/library/app:latest]]
 export def "import daemonset" [
-    --selector (-l): string = ''
-    --namespace (-n): string = ''
+    --selector (-l): string = 'name=toolkit' # the pod labels of the toolkit daemonset
+    --namespace (-n): string = '' # the namespace of the toolkit pod
 ]: [
     string -> string
     list<string> -> list<string>
@@ -395,7 +402,8 @@ export def "import ssh" [
     }
 }
 
-# Upload(sync) oci images into s3 and given back the pre-signed download urls.
+# Upload(sync) oci images into s3 then given back the pre-signed download urls.
+@example "push a remote image to s3 as a tarball downloadable url" { "nginx" | oci push s3 } --result {"url": "https://cos.ap-guangzhou.myqcloud.com/...", "name": "nginx"}
 export def "push s3" [
     --bucket: string # the s3 bucket to put, default to `~/.aws/credentials` [default] profile
     --endpoint-url: string # the s3 endpoint-url to put, default to `~/.aws/credentials` [default] profile
