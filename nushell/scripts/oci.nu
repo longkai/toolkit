@@ -51,9 +51,13 @@ def is-tencent-cloud []: nothing -> bool {
     } catch { false }
 }
 
+def is-domain []: string -> bool {
+    host $in | complete | $in.exit_code == 0
+}
+
 def parse-oci-image-url []: string -> record<registry: string, namespace: string, name: string, tag: string, digest: string, full_url: string> {
     # 1 => nginx
-    # 2 => library/nginx
+    # 2 => library/nginx, kennylongio/toolkit, registry.k8s.io/kube-apiserver:v1.34.1 # authority like docker library without `library`
     # 3 => registry/library/nginx
     # 4 => registry/main/sub/nginx
 
@@ -65,8 +69,16 @@ def parse-oci-image-url []: string -> record<registry: string, namespace: string
             namespace: 'library'
         }
         2 => {
-            registry: 'docker.io'
-            namespace: ($segs | first)
+            mut registry = 'docker.io'
+            mut ns = ($segs | first)
+            if ($segs | first | is-domain) {
+                $registry = $segs | first
+                $ns = ''
+            }
+            {
+                registry: $registry
+                namespace: $ns
+            }
         }
         _ => {
             registry: ($segs | first)
@@ -78,7 +90,7 @@ def parse-oci-image-url []: string -> record<registry: string, namespace: string
             'mirror.ccs.tencentyun.com'
         } else { $dict.registry }
     } | upsert full_url {|dict|
-        let url = [$dict.registry $dict.namespace $dict.name] | str join '/'
+        let url = [$dict.registry $dict.namespace $dict.name] | where ($it | is-not-empty) | str join '/'
         if ($dict.digest | is-not-empty) {
             $url + '@' + $dict.digest
         } else {
@@ -154,7 +166,7 @@ def helm-chart-oci []: string -> string {
     let dir = mktemp --directory
     tar xf $in -C $dir
     let conf = open ([$dir manifest.json] | path join) | get 0.Config
-    let out = open ([$dir $conf] | path join) | get type? | $in in [application library]
+    let out = open -r ([$dir $conf] | path join) | from json | get type? | $in in [application library]
     | if $in {
         let dst = mktemp -t oci-chart.XXXX
         log debug $'($input) is a helm chart and transform it to ($dst)'
