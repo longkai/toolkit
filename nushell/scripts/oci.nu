@@ -179,6 +179,10 @@ def helm-chart-oci []: string -> string {
     $out
 }
 
+def tarball-image-tag []: string -> string {
+    tar -xOf $in manifest.json | from json | get 0.RepoTags.0
+}
+
 def dl [
     --platform: string
 ]: string -> string {
@@ -247,7 +251,7 @@ def dl [
     match $url.scheme {
         'http' | 'https' => {
             let out = mktemp -t oci-image.XXXX
-            $url | url join | curl -L -o $out $in
+            $url | url join | curl -L --fail-with-body -o $out $in
             $out
         }
         'file' => {
@@ -311,21 +315,22 @@ export def import []: [
 ] {
     let input = $in
     $in | par-each {|it|
-        try {
+        let tarball = try {
             # try download then fallback to a local file
             let dst = mktemp -t oci-image.XXXX
-            curl -L -o $dst $it
+            curl --fail-with-body -L -o $dst $it
             $dst
-        } catch { $input }
-        | if (which docker | is-empty) {
-            log debug $'using ctr to load image ($in)'
-            ctr -n k8s.io i import $in
-            $in
+        } catch { $it }
+        if (which docker | is-empty) {
+            log debug $'using ctr to load image ($tarball)'
+            ctr -n k8s.io i import $tarball
         } else {
-            log debug $'using docker to load image ($in)'
-            docker load -i $in
-            $in
-        } | if $input != $in { rm -rf $in }
+            log debug $'using docker to load image ($tarball)'
+            docker load -i $tarball
+        }
+        let tag = $tarball | tarball-image-tag
+        if $it != $tarball { rm -rf $tarball }
+        $tag
     }
 }
 
@@ -360,12 +365,11 @@ export def "import daemonset" [
     string -> string
     list<string> -> list<string>
  ] {
-    let input = $in | to json
+    let input = $in | to json --raw
     kubectl get po -n $namespace -l $selector -owide | from ssv | par-each --keep-order { |it|
         log info $'executing pod ($it.NAME) on ($it.NODE)'
-        kubectl exec -n $namespace $it.NAME -- nu --login -c $"($input) | oci import"
-    } | each { |it|
-        $it | lines | last | parse "{_} {image} {_}" | get image.0
+        kubectl exec -n $namespace $it.NAME -- nu --login -c $"($input) | oci import | to json --raw"
+            | lines --skip-empty | last | from json
     }
 }
 
@@ -384,7 +388,7 @@ export def "import ssh" [
 ] {
     let tarballs = $in | par-each {|it|
         let dst = mktemp -t oci-image.XXXX
-        curl -o $dst -L $it.url
+        curl --fail-with-body -o $dst -L $it.url
         [ $dst ]
     } | flatten # always be an array since var args below
 
