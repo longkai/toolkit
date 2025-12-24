@@ -277,8 +277,12 @@ export def "push registry" [
 ]: [
     string -> string
     list<string> -> list<string>
+    record<url: string, image: string> -> string
+    list<record<url: string, image: string>> -> list<string>
 ] {
+    # TODO(kennylong): use `crane copy` instead
     $in | par-each {|it|
+        let it = if ($it | describe) like 'record<' { $it.url } else { $it } | str trim
         let tarball = $it | dl --platform $platform
         let ref = $tarball | parse-oci-manifest
         let registry = $registry | default $ref.registry
@@ -315,6 +319,7 @@ export def import []: [
 ] {
     let input = $in
     $in | par-each {|it|
+        let it = $it | str trim
         let tarball = try {
             # try download then fallback to a local file
             let dst = mktemp -t oci-image.XXXX
@@ -433,7 +438,7 @@ export def "push s3" [
     let bucket = $bucket | default $config.bucket?
     let platform = $platform | default (default-platform)
     $in | par-each {|it|
-        $it | pull --platform $platform
+        $it | str trim | pull --platform $platform
         | s3-sync --bucket $bucket --endpoint-url $config.endpoint_url
         | aws s3 presign --expires-in ($expires_in / 1sec) $'s3://([$bucket $in] | path join)' --endpoint-url $config.endpoint_url
         | {
