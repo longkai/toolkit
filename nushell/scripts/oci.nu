@@ -378,51 +378,6 @@ export def "import daemonset" [
     }
 }
 
-# Import images to the remote hosts using scp/ssh.
-#
-# The input is the output from `push s3` command.
-export def "import ssh" [
-    # hosts: list<record<host: string, user?: string, port?: int>> # the ssh/scp remote targets, default to all k8s nodes
-    hosts?: any # the ssh/scp remote targets one of [string(host), list<string(host)>, record<host: string, user?: string, port?: int>, or a list of the that record], default to all k8s nodes
-    --ctr-or-docker: string # the remote host use `docker` or `ctr` or other command you can specify to import oci images to local
-    --user: string = 'root' # the default ssh remote user, if not specify with `hosts` positional arg
-    --port: int = 22 # the default ssh remote port, if not specify with `hosts` positional arg
-]: [
-    record<url: string, image: string> -> nothing
-    list<record<url: string, image: string>> -> nothing
-] {
-    let tarballs = $in | par-each {|it|
-        let dst = mktemp -t oci-image.XXXX
-        curl --fail-with-body -o $dst -L $it.url
-        [ $dst ]
-    } | flatten # always be an array since var args below
-
-    let hosts = $hosts | resolve-hosts
-    let cmd = if $ctr_or_docker == null {
-        kubectl get node -o wide | from ssv | get CONTAINER-RUNTIME | first | str starts-with 'containerd://' | if $in { 'ctr' } else { 'docker' }
-    } else { $ctr_or_docker }
-
-    let shell = $tarballs | each {|file|
-        if $cmd == 'ctr' {
-            $'ctr -n k8s.io i import ($file)' # Note: --base-name foo/bar
-        } else {
-            $'($cmd) load -i ($file)'
-        } | $'($in); rm -rf ($file);'
-    } | prepend 'PATH=/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin ' | str join ''
-
-    $hosts | each {|it|
-        let port = $it.port? | default $port
-        let user = $it.user? | default $user
-        let remote = [$user $it.host] | str join '@'
-
-        log debug $'scp oci tarballs to ($remote)...'
-        scp -P $port ...$tarballs $'($remote):/tmp'
-
-        log debug $'ssh to load oci tarballs to ($remote) with: ($shell)'
-        ssh $remote -p $port $'sh -c "($shell)"'
-    }
-}
-
 # Upload(sync) oci images into s3 then given back the pre-signed download urls.
 @example "push a remote image to s3 as a tarball downloadable url" { "nginx" | oci push s3 } --result {"url": "https://cos.ap-guangzhou.myqcloud.com/...", "name": "nginx"}
 export def "push s3" [
