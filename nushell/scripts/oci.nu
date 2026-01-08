@@ -17,6 +17,7 @@ def pull [
     let dst = $url | into local-file-name
     let ref = $url | parse-oci-image-url
     $dst | path dirname | mkdir $in # TODO(kennylong): how to do it in a chain without break?
+    let force = try { ($dst | tarball-image-tag) != $url } catch { true } | $force
     $dst
     | if $force or not ($in | path exists) or ($ref.tag == 'latest') {
         log info $'downloading ($url) to ($in)'
