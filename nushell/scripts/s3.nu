@@ -1,4 +1,5 @@
 use ./helper.nu *
+use std/assert
 
 def "from aws toml" []: string -> record {
     $in | path expand | open $in
@@ -24,12 +25,12 @@ export def get-config [
     } catch {
         {}
     }
-    let region = $region | default $config.region? | default 'us-east-1'
+    let region = $region | default -e $config.region? | default -e 'us-east-1'
     '~/.aws/credentials'
     | from aws toml
     | get default
     | upsert region $region
-    | upsert endpoint_url { |it| $endpoint_url | default $it.endpoint_url? | default $'https://s3.($region).amazonaws.com' }
+    | upsert endpoint_url { |it| $endpoint_url | default -e $it.endpoint_url? | default -e $'https://s3.($region).amazonaws.com' }
 }
 
 def parse-s3-uri []: string -> record<bucket: string, path: string> {
@@ -142,4 +143,40 @@ export def presign [
     log debug $"signature => ($signature)"
 
     $'($endpoint_url)($path)?($query | insert X-Amz-Signature $signature | url build-query)'
+}
+
+# Copy a file from a url or a local path to s3 then return an s3 presign GET url.
+#
+# Note `/path/to/dir/` vs. `/path/to/file`
+@example "Copy a local file to s3" { s3 cp /path/to/file "s3://my-bucket/path/to/file" } --result https://example.com/...
+@example "Copy a local file to s3 dir with `bucket` in `~/.aws/credentials`" { s3 cp /path/to/file "s3:///path/to/dir/" } --result https://example.com/...
+@example "Copy a remote url to s3" { s3 cp https://example.com/file "s3://my-bucket/path/to/file" } --result https://example.com/...
+export def cp [
+    s3uri?: string # aka. `s3://<bucket>/path/to/object`, default use `$in` pipeline
+    --access-key: string # aws access key, default to `~/.aws/credentials` [default] profile
+    --secret-key: string # aws secret key, default to `~/.aws/credentials` [default] profile
+    --endpoint-url: string = '' # base endpoint url if not use aws, e.g., `https://cos.ap-guangzhou.myqcloud.com`, default to `~/.aws/credentials` [default] profile
+    --region: string = 'us-east-1' # service region, doesn't matter if not use aws, default to `~/.aws/config` [default] profile
+]: [
+    string -> string
+] {
+    let input = $in
+    let fname = try {
+        let fname = $input | url parse | get path | path basename
+        log debug $"downloading ($input)"
+        curl -o $fname -L --fail-with-body $input
+        $fname
+    } catch { |err|
+       assert ($err.msg == 'Unsupported input') $"Input should be a url or download fail: ($err)"
+       log debug $'not a url, treat it as a local path'
+       $input
+    }
+    let config = get-config --access-key $access_key --secret-key $secret_key --region $region --endpoint-url $endpoint_url
+    let s3_proto = $s3uri | default -e "s3:///" | parse-s3-uri
+    let bucket = if ($s3_proto.bucket | is-not-empty) { $s3_proto.bucket } else { $config.bucket }
+    aws s3 cp $fname $"s3://($bucket)/($s3_proto.path)" --endpoint-url $config.endpoint_url
+    | tee {
+        $in | parse '{_} to {a}' | $in.a | first | str trim
+        | aws s3 presign $in --endpoint-url $config.endpoint_url
+    }
 }
