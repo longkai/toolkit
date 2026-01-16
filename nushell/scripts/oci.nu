@@ -39,10 +39,10 @@ def s3-sync [
     $in
     | path parse
     | do {
-        log info $'sync local dir ($in.parent) including ($in.stem).($in.extension) to s3://([$bucket $prefix $in.parent] | path join)'
-        aws s3 sync $in.parent $'s3://([$bucket $prefix $in.parent] | path join)' --exclude '*' --include $'($in.stem).($in.extension)' --endpoint-url $endpoint_url
+        log info $'sync local dir ($in.parent) including ($in.stem).($in.extension) to s3://([$bucket $prefix $in.parent] | str join "/")'
+        aws s3 sync $in.parent $'s3://([$bucket $prefix $in.parent] | str join "/")' --exclude '*' --include $'($in.stem).($in.extension)' --endpoint-url $endpoint_url
         log info 'sync success'
-        [$prefix $src] | path join
+        [$prefix $src] | str join '/'
     }
 }
 
@@ -120,22 +120,21 @@ def default-platform []: nothing -> string {
         'aarch64' => 'arm64'
         _ => $info.arch # may not work...
     }
-    [$info.name $arch] | path join
+    [$info.name $arch] | str join '/'
 }
 
 def parse-oci-manifest []: string -> record<registry: string, namespace: string, name: string, tag: string, digest: string> {
     const manifest = 'manifest.json'
     let input = $in
-    try {
-        tar tf $input | grep -q $'^($manifest)$'
+    if (tar tf $input | find -r $'^($manifest)$' | is-not-empty) {
         tar xf $input $manifest
         let out = open manifest.json | get 0.RepoTags.0 | parse-oci-image-url
         rm $manifest
         $out
-    } catch { |err|
+    } else {
         # not found
         log debug $'($manifest) not found in tarball ($input), treat it as a helm chart tgz'
-        let file = tar tf $input | grep -E '^([^/]+)/Chart.yaml$'
+        let file = tar tf $input | find -r '^([^/]+)/Chart.yaml$' --no-highlight | first
         tar xf $input $file
         let chart = open $file
         if $chart.type? not-in [application library] {
@@ -149,8 +148,8 @@ def parse-oci-manifest []: string -> record<registry: string, namespace: string,
 # if the input tarball path is a helm chart, the return value will not equal to the input.
 def helm-chart-oci []: string -> string {
     let input = $in
-    try {
-        let file = tar tf $input | grep -E '^([^/]+)/Chart.yaml$'
+    let file = tar tf $input | find -r '^([^/]+)/Chart.yaml$' --no-highlight | first
+    if ($file | is-not-empty) {
         tar xf $input $file
         if (open $file | $in.type? in [application library]) {
             log debug $'($input) is an helm chart tgz'
@@ -160,13 +159,14 @@ def helm-chart-oci []: string -> string {
             return $out
         }
         rm $file
-    } catch { |err|
+    } else {
         log debug $'($input) is not a helm chart tgz, try as oci tarball'
     }
 
     let dir = mktemp --directory
-    tar xf $in -C $dir
+    tar xvf $in -C $dir
     let conf = open ([$dir manifest.json] | path join) | get 0.Config
+    let conf = if ($nu.os-info.name == 'windows') { $conf | str replace ':' '_' } else { $conf }
     let out = open -r ([$dir $conf] | path join) | from json | get type? | $in in [application library]
     | if $in {
         let dst = mktemp -t oci-chart.XXXX
@@ -211,7 +211,7 @@ def dl [
             log debug $'cannot parse as a oci image ref ($input)'
             return $input
         }
-        let repo = $ref | [$in.registry $in.namespace $in.name] | path join
+        let repo = $ref | [$in.registry $in.namespace $in.name] | str join '/'
         # digest has the highest priority and ignore tag if digest is present
         # if no digest, use tag, if no tag, tag is latest
         # if no tag, but digest, use digest
@@ -256,7 +256,7 @@ def dl [
             $out
         }
         'file' => {
-            [$url.host $url.path] | where $it != '/' | path join
+            [$url.host $url.path] | where $it != '/' | str join '/'
         }
         _ => {
             $input | pull --platform $platform
@@ -291,7 +291,7 @@ export def "push registry" [
         let name = $name | default $ref.name
         let tag = $tag | default $ref.tag | default 'latest'
 
-        let dst = [$registry $ns $name] | path join | $in + ':' + $tag
+        let dst = [$registry $ns $name] | str join '/' | $in + ':' + $tag
         $tarball | helm-chart-oci | if $in != $tarball {
             let oci = $'oci://($registry)/($ns)'
             log info $'push a helm chart ($in) to ($oci)'
@@ -396,7 +396,7 @@ export def "push s3" [
     $in | par-each {|it|
         $it | str trim | pull --platform $platform
         | s3-sync --bucket $bucket --endpoint-url $config.endpoint_url
-        | aws s3 presign --expires-in ($expires_in / 1sec) $'s3://([$bucket $in] | path join)' --endpoint-url $config.endpoint_url
+        | aws s3 presign --expires-in ($expires_in / 1sec) $'s3://([$bucket $in] | str join "/")' --endpoint-url $config.endpoint_url
         | {
             url: $in
             image: $it

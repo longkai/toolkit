@@ -27,7 +27,7 @@ if ([
     $"alias vi = vim
 alias docker = nerdctl
 alias du = dust
-alias find = fd
+#alias find = fd
 alias grep = rg
 alias cat = bat --theme='Solarized \(dark\)' # better with nushell's theme style?
 " | save -f ($nu.temp-path | path join "alias.nu")
