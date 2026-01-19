@@ -25,7 +25,7 @@ alias ll = ls -l
 alias la = ls -a
 alias less = less -IR
 
-source ($nu.temp-path | path join "alias.nu")
+source ($nu.temp-dir | path join "alias.nu")
 
 # https://carapace-sh.github.io/carapace-bin/setup.html#nushell
 source ~/.cache/carapace/init.nu

@@ -30,7 +30,7 @@ alias du = dust
 #alias find = fd
 alias grep = rg
 alias cat = bat --theme='Solarized \(dark\)' # better with nushell's theme style?
-" | save -f ($nu.temp-path | path join "alias.nu")
+" | save -f ($nu.temp-dir | path join "alias.nu")
 } else {
     # casual usage
     $env.PATH ++= [
@@ -38,7 +38,7 @@ alias cat = bat --theme='Solarized \(dark\)' # better with nushell's theme style
     ]
     $env.PATH = ($env.PATH | uniq)
 
-    'alias grep = grep --color=auto' | save -f ($nu.temp-path | path join "alias.nu")
+    'alias grep = grep --color=auto' | save -f ($nu.home-dir | path join "alias.nu")
 }
 
 load-env {
