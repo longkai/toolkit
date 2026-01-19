@@ -38,7 +38,7 @@ alias cat = bat --theme='Solarized \(dark\)' # better with nushell's theme style
     ]
     $env.PATH = ($env.PATH | uniq)
 
-    'alias grep = grep --color=auto' | save -f ($nu.home-dir | path join "alias.nu")
+    'alias grep = grep --color=auto' | save -f ($nu.temp-dir | path join "alias.nu")
 }
 
 load-env {
