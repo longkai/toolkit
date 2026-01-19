@@ -13,12 +13,12 @@ def pull [
     --force (-f) # wether to force download if file already exists, note `latest` tag is always downloaded.
     --platform: string
 ]: string -> string {
-    let url = $in
-    let dst = $url | into local-file-name
-    let ref = $url | parse-oci-image-url
-    $dst | path dirname | mkdir $in # TODO(kennylong): how to do it in a chain without break?
-    let force = $force or ( try { ($dst | tarball-image-tag err> /dev/null) != $url } catch { true } )
-    $dst
+    $in | let url
+    | $url | parse-oci-image-url | let ref
+    | $url | into local-file-name | let dst
+    | $dst | path dirname | mkdir $in
+    | $force or ( try { ($dst | tarball-image-tag err> /dev/null) != $url } catch { true } ) | let force
+    | $dst
     | if $force or not ($in | path exists) or ($ref.tag == 'latest') {
         log info $'downloading ($url) to ($in)'
         crane pull --platform $platform $ref.full_url $in
