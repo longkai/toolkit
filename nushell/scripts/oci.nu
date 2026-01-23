@@ -164,7 +164,7 @@ def helm-chart-oci []: string -> string {
     }
 
     let dir = mktemp --directory
-    tar xvf $in -C $dir
+    tar xf $in -C $dir
     let conf = open ([$dir manifest.json] | path join) | get 0.Config
     let conf = if ($nu.os-info.name == 'windows') { $conf | str replace ':' '_' } else { $conf }
     let out = open -r ([$dir $conf] | path join) | from json | get type? | $in in [application library]
@@ -246,7 +246,7 @@ def dl [
     let url = try {
         $url | url parse
     } catch { |err|
-        log debug $'parse url ($url) fail: ($err)'
+        log debug $'parse url ($url) fail: ($err.msg)'
         {scheme: ''}
     }
     match $url.scheme {
@@ -275,6 +275,7 @@ export def "push registry" [
     --tag(-t): string # the pushed image tag if nay
     --insecure # whether the registry is insecure
     --platform: string
+    # --config: string # use another docker.json config instead of default one when pushing
 ]: [
     string -> string
     list<string> -> list<string>
@@ -298,14 +299,25 @@ export def "push registry" [
             helm push $in $oci
         } else {
             log info $'pushing ($it) as ($tarball) to ($dst)'
-            crane push $tarball $dst --insecure=($insecure)
+            # check is another registry
+            let cpath = [[value, optional, insensitive]; [auths false false] [$'($registry)/($ns)/' true false]] | into cell-path
+            let auth = open ~/.docker/config.json | get $cpath
+            if ($auth | is-not-empty) {
+                # mkdir a temp docker config
+                let dir = mktemp --directory
+                log debug $'use another auth for registry ($registry) at ($dir)'
+                {
+                    auths: {
+                        ($'($registry)/($ns)/'): $auth
+                    }
+                } | to json | save -f ([$dir 'config.json'] | path join)
+                DOCKER_CONFIG=$dir crane push $tarball $dst --insecure=($insecure)
+                rm -rf $dir
+            } else {
+                crane push $tarball $dst --insecure=($insecure)
+            }
         }
 
-        # clean tmp file
-        if $it != $tarball {
-            log debug $'delete tmp file ($tarball)'
-            rm -rf $tarball
-        }
         $dst
     }
 }
