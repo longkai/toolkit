@@ -284,8 +284,8 @@ export def "push registry" [
 ] {
     # TODO(kennylong): use `crane copy` instead
     $in | par-each {|it|
-        let it = if ($it | describe) like 'record<' { $it.url } else { $it } | str trim
-        let tarball = $it | dl --platform $platform
+        let _it = if ($it | describe) like 'record<' { $it.url } else { $it } | str trim
+        let tarball = $_it | dl --platform $platform
         let ref = $tarball | parse-oci-manifest
         let registry = $registry | default $ref.registry
         let ns = $namespace | default $ref.namespace | default 'library'
@@ -298,7 +298,7 @@ export def "push registry" [
             log info $'push a helm chart ($in) to ($oci)'
             helm push $in $oci
         } else {
-            log info $'pushing ($it) as ($tarball) to ($dst)'
+            log info $'pushing ($_it) as ($tarball) to ($dst)'
             # check is another registry
             let cpath = [[value, optional, insensitive]; [auths false false] [$'($registry)/($ns)/' true false]] | into cell-path
             let auth = open ~/.docker/config.json | get $cpath
@@ -332,13 +332,13 @@ export def import []: [
 ] {
     let input = $in
     $in | par-each {|it|
-        let it = $it | str trim
+        let _it = $it | str trim
         let tarball = try {
             # try download then fallback to a local file
             let dst = mktemp -t oci-image.XXXX
-            curl --fail-with-body -L -o $dst $it
+            curl --fail-with-body -L -o $dst $_it
             $dst
-        } catch { $it }
+        } catch { $_it }
         if (which docker | is-empty) {
             log debug $'using ctr to load image ($tarball)'
             ctr -n k8s.io i import $tarball
@@ -347,7 +347,7 @@ export def import []: [
             docker load -i $tarball
         }
         let tag = $tarball | tarball-image-tag
-        if $it != $tarball { rm -rf $tarball }
+        if $_it != $tarball { rm -rf $tarball }
         $tag
     }
 }
