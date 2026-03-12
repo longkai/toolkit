@@ -33,5 +33,7 @@ source ~/.cache/carapace/init.nu
 # https://starship.rs/#nushell
 use ~/.cache/starship/init.nu
 
+use std/clip
+
 # in ./scripts dir
 use mod.nu *
