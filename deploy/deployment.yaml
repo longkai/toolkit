@@ -1,0 +1,70 @@
+# Toolkit Deployment - for daily operations (image transfer, S3 management, log analysis).
+# Usage:
+#   kubectl apply -f deploy.yaml
+#   kubectl exec -it deploy/toolkit -- nu
+#
+# All volume mounts below are OPTIONAL. You can also configure credentials
+# directly inside the container, but they won't persist across pod restarts.
+# The mount paths don't have to be /root — adjust to match your container user's home.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: toolkit
+spec:
+  selector:
+    matchLabels:
+      app: toolkit
+  template:
+    metadata:
+      labels:
+        app: toolkit
+    spec:
+      # Use host network to access internal cluster services directly
+      hostNetwork: true
+      # Uncomment and set to pin the pod to a specific node
+      # nodeName: <local-node>
+      containers:
+      - command:
+        - sleep
+        - infinity
+        image: kennylongio/toolkit:latest
+        name: toolkit
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+            ephemeral-storage: "4Gi"
+          limits:
+            cpu: 500m
+            memory: 2048Mi
+            ephemeral-storage: "16Gi"
+        volumeMounts:
+        # (Optional) Reuse host kubeconfig for kubectl access
+        - mountPath: /root/.kube
+          name: kube-config
+        # (Optional) Reuse S3-compatible storage credentials (any S3-compatible: AWS, COS, OSS, MinIO, etc.)
+        - name: aws-config
+          mountPath: /root/.aws
+        # (Optional) Reuse Docker registry auth for image push/pull
+        - name: docker-config
+          mountPath: /root/.docker
+        # (Optional) Persist nushell command history across restarts
+        - name: toolkit-history
+          mountPath: /root/.config/nushell/history.txt
+      volumes:
+      - hostPath:
+          path: /root/history.txt
+          type: FileOrCreate
+        name: toolkit-history
+      - hostPath:
+          path: /root/.kube
+          type: Directory
+        name: kube-config
+      - hostPath:
+          path: /root/.docker
+          type: Directory
+        name: docker-config
+      - name: aws-config
+        hostPath:
+          path: /root/.aws
+          type: Directory

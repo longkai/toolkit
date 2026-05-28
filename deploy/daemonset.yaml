@@ -1,0 +1,48 @@
+# Toolkit DaemonSet - for importing images on ALL nodes (e.g., offline image distribution).
+# Mounts containerd socket and ctr binary so the toolkit pod can directly
+# operate the node's container runtime.
+#
+# Usage:
+#   kubectl apply -f ds.yaml
+#
+# Works with `oci import daemonset` command to concurrently import images to all nodes.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: toolkit
+  labels:
+    k8s-app: toolkit
+spec:
+  selector:
+    matchLabels:
+      name: toolkit
+  template:
+    metadata:
+      labels:
+        name: toolkit
+    spec:
+      containers:
+      - command:
+        - sleep
+        - infinity
+        image: kennylongio/toolkit:latest
+        name: toolkit
+        volumeMounts:
+        # Mount host ctr binary for image import operations
+        - mountPath: /usr/local/bin/ctr
+          name: ctr
+        # Mount containerd socket for direct container runtime access
+        - mountPath: /run/containerd/containerd.sock
+          name: containerd-socket
+      volumes:
+      - name: containerd-socket
+        hostPath:
+          # Adjust the path if your runtime uses a different socket:
+          # Docker: /var/run/docker.sock
+          # Dockershim: /var/run/dockershim.sock
+          path: /run/containerd/containerd.sock
+          type: Socket
+      - name: ctr
+        hostPath:
+          path: /usr/local/bin/ctr
+          type: File
