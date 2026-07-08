@@ -1,5 +1,7 @@
-use ./helper.nu *
+use std/log
 use std/assert
+
+use ./helper.nu *
 
 def "from aws toml" []: string -> record {
     $in | path expand | open $in
@@ -98,7 +100,7 @@ export def presign [
 
     let url_parts = $endpoint_url | url parse
     let hdr = $headers | transpose k v
-        | reduce -f {} { |it, acc| $acc | upsert ($it.k | str downcase) $it.v }
+        | reduce -f {} { |it, acc| $acc | upsert ($it.k | str lowercase) $it.v }
         | upsert 'host' $url_parts.host
     let query = $query
         | upsert 'X-Amz-Algorithm' $algorithm
@@ -107,7 +109,7 @@ export def presign [
         | upsert 'X-Amz-Expires' ($expires_in / 1sec)
         | upsert 'X-Amz-SignedHeaders' 'host'
     let canonicalRequest = [
-        ($method | str upcase)
+        ($method | str uppercase)
         ([$endpoint_url $path] | path join)
         ($query | url build-query | split row '&' | sort | str join '&')
         (

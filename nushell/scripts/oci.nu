@@ -1,6 +1,8 @@
 #!/usr/bin/env -S nu --stdin
 use s3
 
+use std/log
+
 # turn '<registry>/<namespace>/<repo>:<tag>' to '<repo>/<tag>.tar'
 def "into local-file-name" []: string -> string {
     let dict = $in | parse-oci-image-url
@@ -402,10 +404,11 @@ export def "push s3" [
     string -> record<url: string, image: string>
     list<string> -> list<record<url: string, image: string>>
 ] {
+    let input = $in
     let config = s3 get-config --endpoint-url $endpoint_url
     let bucket = $bucket | default $config.bucket?
     let platform = $platform | default (default-platform)
-    $in | par-each {|it|
+    $input | par-each {|it|
         $it | str trim | pull --platform $platform
         | s3-sync --bucket $bucket --endpoint-url $config.endpoint_url
         | aws s3 presign --expires-in ($expires_in / 1sec) $'s3://([$bucket $in] | str join "/")' --endpoint-url $config.endpoint_url

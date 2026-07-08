@@ -19,7 +19,7 @@ export def parse-access-log [
             return $it | into record
         }
         let entry = $it | transpose k v | reduce -f {} { |it, acc|
-            $acc | upsert ($it.k | str downcase | str kebab-case) (
+            $acc | upsert ($it.k | str lowercase | str kebab-case) (
                 # unset values are represented as null values and empty strings are rendered as ""
                 match $it.k {
                     START_TIME => {
