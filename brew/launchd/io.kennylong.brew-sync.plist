@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  macOS LaunchAgent for cross-platform Homebrew sync (pull + install + upgrade).
+
+  This runs in your USER domain (not root) and calls `brew/sync.nu upgrade`
+  once a day at 12:30.
+
+  Install (edit REPO_PATH first, see README):
+    1. Replace __REPO__ below with the absolute path to this repo, e.g.
+       /Users/kennylong/src/toolkit
+    2. cp brew/launchd/io.kennylong.brew-sync.plist ~/Library/LaunchAgents/
+    3. launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/io.kennylong.brew-sync.plist
+       (older macOS: launchctl load ~/Library/LaunchAgents/io.kennylong.brew-sync.plist)
+
+  Uninstall:
+    launchctl bootout gui/$(id -u)/io.kennylong.brew-sync
+    rm ~/Library/LaunchAgents/io.kennylong.brew-sync.plist
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>io.kennylong.brew-sync</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>nu</string>
+        <string>__REPO__/brew/sync.nu</string>
+        <string>upgrade</string>
+    </array>
+
+    <!-- Ensure Homebrew (and nu) are on PATH (Apple Silicon: /opt/homebrew, Intel: /usr/local). -->
+    <!-- launchd resolves the bare `nu` above via this PATH. -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <!-- Run daily at 12:30. -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>12</integer>
+        <key>Minute</key>
+        <integer>30</integer>
+    </dict>
+
+    <!-- If the machine was asleep at 12:30, run once on wake. -->
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>__HOME__/Library/Logs/brew-sync.log</string>
+    <key>StandardErrorPath</key>
+    <string>__HOME__/Library/Logs/brew-sync.log</string>
+</dict>
+</plist>

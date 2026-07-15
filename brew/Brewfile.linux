@@ -1,0 +1,13 @@
+# Brewfile.linux — Linux-only entries
+#
+# Loaded automatically by ./Brewfile when running on Linux.
+# Put things here that are Linux-only (formulae that don't exist or aren't
+# wanted on macOS). Homebrew on Linux does NOT support cask or mas.
+#
+# Do NOT add cross-platform command-line formulae here — those belong in
+# the shared ./Brewfile so macOS picks them up too.
+
+# --- Linux-only taps -------------------------------------------------------
+
+# --- Linux-only formulae ---------------------------------------------------
+# brew "gcc"

@@ -1,0 +1,208 @@
+# =============================================================================
+#  Ghostty 配置 —— 极客风 / 极致美观 / 高效 (macOS · Ghostty 1.3.1)
+#  面向命令行内高频使用 Claude Code 的场景。
+#
+#  安装：软链到 ~/.config/ghostty/config（详见同目录 README_zh.md）
+#  热重载：修改后在 Ghostty 中按 Cmd+Shift+, 即可重新加载，无需重启。
+#  校验：/Applications/Ghostty.app/Contents/MacOS/ghostty +show-config
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+#  主题与外观：随系统明暗模式自动切换（无需任何脚本）
+# -----------------------------------------------------------------------------
+# 浅色用 Catppuccin Latte，深色用 Catppuccin Mocha，二者均为 Ghostty 内置主题。
+theme = light:Catppuccin Latte,dark:Catppuccin Mocha
+
+# 使用 Display-P3 广色域，让 mac 上的配色更鲜活通透。
+window-colorspace = display-p3
+
+# 让终端跟随主题自动决定窗口（标题栏等）明暗，观感统一。
+window-theme = auto
+
+
+# -----------------------------------------------------------------------------
+#  默认 Shell：Nushell
+# -----------------------------------------------------------------------------
+# 新窗口/标签默认启动 nushell（绝对路径，避免 PATH 差异）。
+# 若 nu 路径变化，用 `which nu` 重新确认后修改此处。
+command = /opt/homebrew/bin/nu
+
+
+# -----------------------------------------------------------------------------
+#  字体与连字：Cascadia Code Nerd Font（连字 + Nerd Font 图标）
+# -----------------------------------------------------------------------------
+# 精确 family 名已用 `ghostty +list-fonts` 校验。自带 Nerd Font 图标，
+# 供 starship / Claude Code 等 CLI 的图标正常显示。
+font-family = Cascadia Code NF
+font-size = 15
+
+# 连字（Ligatures）：Cascadia Code 默认启用 calt/liga（如 -> == != >= 会合并渲染）。
+# 这里显式声明以确保开启；如需关闭连字，把下面两行改为 -calt -liga 即可。
+font-feature = calt
+font-feature = liga
+
+# 可选：启用 Cascadia 的手写体斜体（stylistic set 01）。喜欢花体注释可取消注释。
+# font-feature = ss01
+
+# mac 上略微加粗字形，提升小字号下的清晰度。
+font-thicken = true
+
+# 行高留白，长时间阅读日志/代码更舒适。
+adjust-cell-height = 12%
+
+# 可读性护栏：强制前景/背景至少 1.05 倍对比度，
+# 避免个别配色/被程序染色的输出出现「暗字贴暗底」看不清的情况。
+minimum-contrast = 1.05
+
+
+# -----------------------------------------------------------------------------
+#  毛玻璃与窗口：半透明 + 背景模糊，贴合 macOS 质感
+#  （前后台窗口通过通透感自然区分 —— 间接实现"专注当前窗口"）
+# -----------------------------------------------------------------------------
+# 背景半透明：数值越小越透。0.92 兼顾通透与可读性。
+background-opacity = 0.92
+
+# 背景毛玻璃模糊半径（越大越朦胧）。
+background-blur = 20
+
+# 透明背景下用线性 + gamma 校正混合，文字边缘更干净、不发灰发糊，
+# 与上面的半透明/毛玻璃搭配观感明显更好。
+alpha-blending = linear-corrected
+
+# 透明标题栏：内容与标题栏融为一体，配合毛玻璃更整体。
+macos-titlebar-style = transparent
+
+# 保留窗口投影，增强层次与"当前窗口"的存在感。
+macos-window-shadow = true
+
+# 舒适的内边距，让内容不贴边。
+window-padding-x = 14
+window-padding-y = 10
+# 均衡分配内边距，视觉更居中。
+window-padding-balance = true
+
+# 极客风应用图标（Ghostty 新特性）。可选值如 official / xray / holographic /
+# microchip / blueprint / chalkboard / glass / paper / retro。这里用 X 光风。
+macos-icon = xray
+
+
+# -----------------------------------------------------------------------------
+#  Quick Terminal：全局热键在任意应用中呼出/隐藏（类 iTerm2 热键窗口）
+#  注意：global: 前缀需在「系统设置 → 隐私与安全性 → 辅助功能」授予 Ghostty 权限。
+# -----------------------------------------------------------------------------
+keybind = global:opt+space=toggle_quick_terminal
+
+# 从屏幕顶部下拉（Quake 风格）。
+quick-terminal-position = top
+# 呼出的显示器：main=主屏 / mouse=鼠标所在屏。
+quick-terminal-screen = main
+# 下拉/收起动画时长（秒）。
+quick-terminal-animation-duration = 0.15
+# 失去焦点时自动隐藏，用完即走。
+quick-terminal-autohide = true
+
+
+# -----------------------------------------------------------------------------
+#  键位增强：命令面板 + 高频动作（Ghostty 新特性）
+# -----------------------------------------------------------------------------
+# 命令面板（VSCode 风格）：模糊搜索并执行任意 Ghostty 动作/自定义条目，
+# 不用记快捷键。里面还能「把屏幕导出为 HTML/ANSI」「改标题」等。
+keybind = cmd+shift+p=toggle_command_palette
+
+# 一键把「当前屏幕 + 回滚历史」写入临时文件并用默认程序打开，
+# 回看 Claude Code 的超长输出/报错时非常顺手。
+keybind = cmd+shift+j=write_screen_file:open,plain
+
+# 分屏效率：临时缩放当前分屏（专注）/ 均分所有分屏。
+keybind = cmd+shift+enter=toggle_split_zoom
+keybind = cmd+shift+e=equalize_splits
+
+# 命令间跳转：跳到上一条/下一条命令的提示符处（快速定位长输出里的每次执行）。
+# 依赖 nushell 侧开启的 OSC 133 提示符标记（见 nushell/config.nu）。
+keybind = cmd+shift+up=jump_to_prompt:-1
+keybind = cmd+shift+down=jump_to_prompt:1
+
+
+# -----------------------------------------------------------------------------
+#  Emacs 风格命令行编辑：Option 作为 Meta 键
+# -----------------------------------------------------------------------------
+# 让 Option 作 Meta/Alt，从而 M-b 词左移、M-f 词右移、M-d 删词等生效
+# （nushell 的 reedline 默认 emacs 键位，支持这些 Meta 组合键）。
+#
+# 取 true = 左右两个 Option 都作 Meta（最稳，"meta 键不生效"通常因只设了 left
+# 却按了右 Option，或外接键盘布局差异）。
+# 若你更希望保留「右 Option 输入特殊字符（重音/符号）」，把 true 改回 left，
+# 并确保用「左」Option 触发 Meta。
+macos-option-as-alt = true
+
+
+# -----------------------------------------------------------------------------
+#  分屏：失焦分屏调暗，突出当前活动分屏
+#  （Ghostty 1.3.1 无"整窗失焦调暗"原生能力，此项仅作用于分屏；
+#    整窗专注感由上面的透明+毛玻璃间接达成。）
+#  取值 0~1：越小失焦分屏越暗、区分越强。深色主题（Mocha）下背景本就黑，
+#  压暗天花板有限，需降狠些才明显。0.85 太亮看不出；0.75 仍偏弱；0.5 明确。
+# -----------------------------------------------------------------------------
+unfocused-split-opacity = 0.5
+
+
+# -----------------------------------------------------------------------------
+#  光标与鼠标
+# -----------------------------------------------------------------------------
+# 块状光标不闪烁，专注不分心。
+cursor-style = block
+cursor-style-blink = false
+# 打字时自动隐藏鼠标指针，减少遮挡。
+mouse-hide-while-typing = true
+
+
+# -----------------------------------------------------------------------------
+#  效率增强
+# -----------------------------------------------------------------------------
+# Shell 集成：Ghostty 官方「注入式」集成仅支持 bash/zsh/fish/elvish，不含 nushell，
+# 故 detect 对 nu 会自动跳过注入（无害）。但本仓库已在 nushell/config.nu 里开启
+# nu 内置的 shell_integration（OSC 2/7/8/133），因此标题、目录继承、超链接、
+# 以及上面的 jump_to_prompt「命令间跳转」在 nushell 下均可正常工作。
+shell-integration = detect
+shell-integration-features = cursor,sudo,title
+
+# 划词即复制到系统剪贴板。
+copy-on-select = clipboard
+
+# 更大的滚动回溯缓冲（10MB），方便回看长日志。
+scrollback-limit = 10000000
+
+# 记住并恢复上次的窗口/会话状态。
+window-save-state = always
+
+# 新标签页继承当前工作目录与字号，体验连贯。
+window-inherit-working-directory = true
+window-inherit-font-size = true
+
+# 有多个标签时才显示标签栏，界面更干净。
+window-show-tab-bar = auto
+
+
+# -----------------------------------------------------------------------------
+#  可选项（默认关闭，按口味取消注释启用）
+# -----------------------------------------------------------------------------
+# 鼠标悬停即聚焦分屏（无需点击）。默认关闭，即「点击某分屏才聚焦它」。
+# focus-follows-mouse = true
+
+# 加快滚轮滚动速度（discrete 为普通鼠标滚轮的行数）。
+# mouse-scroll-multiplier = precision:1,discrete:5
+
+# URL 悬停预览（默认已开）；如觉得打扰可显式关闭。
+# link-previews = false
+
+# 背景贴图（酷但影响可读性）：图片路径 + 低不透明度 + 平铺方式。
+# background-image = ~/Pictures/wallpaper.png
+# background-image-opacity = 0.08
+# background-image-fit = cover
+
+# 失焦分屏叠加填充色：不建议开启。它是「固定颜色」，不随 Latte/Mocha 明暗
+# 主题切换，总会在其中一个主题下显得突兀（旧值 1a1b26 属 Tokyo Night，与本
+# 配置的 Catppuccin 也不搭）。弱化失焦分屏用上面的 unfocused-split-opacity
+# 即可，观感更自然。若坚持要用，请按主题挑同色系深色（Mocha 可用 181825）：
+# unfocused-split-fill = 181825

@@ -1,0 +1,181 @@
+# =============================================================================
+#  Git 配置 —— 现代默认 + delta 明暗自适应（贴合终端 Catppuccin 主题）
+#
+#  安装：软链到 ~/.gitconfig（或用 [include] path 引入本文件）。
+#  校验：git config --list --show-origin
+#  依赖：delta（brew install git-delta）。语法主题 Catppuccin Latte/Mocha
+#        是 delta 0.19+ 内置，无需额外安装 bat 主题。
+#
+#  delta 会随终端明暗自动切换（见文末 [delta] 区块），与 ghostty 的
+#  `theme = light:Catppuccin Latte, dark:Catppuccin Mocha` 一一对应。
+# =============================================================================
+
+[user]
+  # 软链到 ~/.gitconfig 前，把下面两项换成你自己的信息（占位符不要提交真实邮箱）。
+  name = kennylong
+  email = __EMAIL__
+
+# -----------------------------------------------------------------------------
+#  安全与传输：校验对象完整性，抵御损坏 / 被篡改的 git 对象
+# -----------------------------------------------------------------------------
+[safe]
+  # 信任任意目录的仓库所有权（跳过 dubious ownership 检查），
+  # 便于多用户 / 挂载盘场景。若想恢复严格校验，删掉此项即可。
+  directory = *
+
+[transfer]
+  fsckObjects = true
+[fetch]
+  fsckObjects = true
+  prune = true          # fetch 时自动清理远端已删除的分支引用
+  pruneTags = true
+[receive]
+  fsckObjects = true
+
+[filter "lfs"]
+  # `process` 走批处理协议，比逐文件 clean/smudge 快很多；
+  # `-- %f` 防止以 - 开头的文件名被误当作命令行选项。
+  process = git lfs filter-process
+  clean = git lfs clean -- %f
+  smudge = git lfs smudge -- %f
+  required = true
+
+# -----------------------------------------------------------------------------
+#  基础
+# -----------------------------------------------------------------------------
+[init]
+  defaultBranch = main
+
+[core]
+  autocrlf = input
+  pager = delta         # 统一分页器（配色见文末 [delta]）
+  # fsmonitor = true    # 用系统 fsmonitor 加速超大仓的 status（Git 2.37+，按需）
+
+[column]
+  ui = auto             # 分支 / 标签等列表自动分栏
+
+[branch]
+  sort = -committerdate # `git branch` 按最近提交时间排序
+
+[tag]
+  sort = version:refname # 标签按版本号语义排序（v1.2 在 v1.10 前面）
+
+[log]
+  date = iso
+
+[commit]
+  verbose = true        # 提交时在编辑器里附上完整 diff，便于回顾
+
+# -----------------------------------------------------------------------------
+#  diff / merge：更聪明的算法与更清晰的冲突标记
+# -----------------------------------------------------------------------------
+[diff]
+  algorithm = histogram # 比默认 myers 更贴合直觉的 diff
+  colorMoved = default  # 高亮“被移动”的代码块，区别于纯增删
+  mnemonicPrefix = true # 用 i/w/c/o 前缀替代 a/b，来源更一目了然
+  renames = copies      # 侦测重命名与复制
+
+[merge]
+  conflictStyle = zdiff3 # 冲突块额外显示共同祖先，更好判断怎么合
+
+[rerere]
+  enabled = true        # 记住冲突解决方案，重复冲突自动复用
+
+# -----------------------------------------------------------------------------
+#  pull / rebase / push：线性历史 + 少敲参数
+# -----------------------------------------------------------------------------
+[pull]
+  rebase = true         # pull 用 rebase，避免无谓的 merge 提交
+[rebase]
+  autoStash = true      # rebase 前自动 stash、完成后自动还原
+  autosquash = true     # 自动编排 fixup! / squash! 提交
+  updateRefs = true     # 栈式分支：一并更新中间依赖分支
+[push]
+  autoSetupRemote = true # 首次 push 自动建立上游，免 --set-upstream
+  followTags = true      # push 时一并推送带注释的标签
+
+# -----------------------------------------------------------------------------
+#  颜色与别名
+# -----------------------------------------------------------------------------
+[color]
+  ui = true
+[color "diff"]
+  old = red strike
+  new = green italic
+
+[alias]
+  a = add
+  b = branch
+  c = commit
+  d = diff
+  s = status
+  ch = checkout
+  sw = switch                 # 新式切换分支（比 checkout 语义更清晰）
+  rs = restore                # 新式撤销工作区改动
+  unstage = restore --staged  # 取消暂存
+  last = log -1 HEAD --stat   # 看最近一次提交及改动文件
+  l = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+
+# =============================================================================
+#  delta —— 语法高亮分页器
+# =============================================================================
+[interactive]
+  diffFilter = delta --color-only --features=interactive
+
+[delta]
+  # detect-dark-light 探测终端背景明暗；再从下面两个带 dark=true / light=true
+  # 的“主题”里自动激活匹配当前模式的那个（另一个因条件不符被忽略）。
+  detect-dark-light = auto
+  features = catppuccin-mocha catppuccin-latte
+
+  navigate = true       # 用 n / N 在各 diff 段之间跳转
+  line-numbers = true   # 显示左右两侧行号
+  hyperlinks = true     # commit / 文件名渲染为可点击链接（终端需支持 OSC 8）
+  # side-by-side = true # 想要并排对比时取消注释
+
+# --- 深色：Catppuccin Mocha（对应 ghostty 的 dark 主题）---------------------
+# 配色取自 Catppuccin 官方 delta 移植（catppuccin/delta）。
+[delta "catppuccin-mocha"]
+  #dark = trueauto
+  syntax-theme = Catppuccin Mocha
+  minus-style = syntax "#493447"
+  minus-emph-style = bold syntax "#694559"
+  plus-style = syntax "#394545"
+  plus-emph-style = bold syntax "#4e6356"
+  map-styles = bold purple => syntax "#5b4e74", bold blue => syntax "#445375", bold cyan => syntax "#446170", bold yellow => syntax "#6b635b"
+  line-numbers-minus-style = bold "#f38ba8"
+  line-numbers-plus-style = bold "#a6e3a1"
+  line-numbers-zero-style = "#6c7086"
+  line-numbers-left-style = "#6c7086"
+  line-numbers-right-style = "#6c7086"
+  file-style = "#cdd6f4"
+  file-decoration-style = "#6c7086"
+  commit-decoration-style = "#6c7086" bold box ul
+  hunk-header-style = file line-number syntax
+  hunk-header-file-style = bold
+  hunk-header-line-number-style = bold "#a6adc8"
+  hunk-header-decoration-style = "#6c7086" box ul
+  blame-palette = "#1e1e2e #181825 #11111b #313244 #45475a"
+
+# --- 浅色：Catppuccin Latte（对应 ghostty 的 light 主题）--------------------
+[delta "catppuccin-latte"]
+  #light = true
+  syntax-theme = Catppuccin Latte
+  minus-style = syntax "#e9c4cf"
+  minus-emph-style = bold syntax "#e5a2b3"
+  plus-style = syntax "#cce1cd"
+  plus-emph-style = bold syntax "#b2d5ae"
+  map-styles = bold purple => syntax "#cbb1f2", bold blue => syntax "#a6c1f5", bold cyan => syntax "#9dd7ef", bold yellow => syntax "#eacfa9"
+  line-numbers-minus-style = bold "#d20f39"
+  line-numbers-plus-style = bold "#40a02b"
+  line-numbers-zero-style = "#9ca0b0"
+  line-numbers-left-style = "#9ca0b0"
+  line-numbers-right-style = "#9ca0b0"
+  file-style = "#4c4f69"
+  file-decoration-style = "#9ca0b0"
+  commit-decoration-style = "#9ca0b0" bold box ul
+  hunk-header-style = file line-number syntax
+  hunk-header-file-style = bold
+  hunk-header-line-number-style = bold "#6c6f85"
+  hunk-header-decoration-style = "#9ca0b0" box ul
+  blame-palette = "#eff1f5 #e6e9ef #dce0e8 #ccd0da #bcc0cc"

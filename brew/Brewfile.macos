@@ -1,0 +1,13 @@
+# AI-powered adaptive IDE (Chinese version)
+cask "codebuddy-cn"
+cask "font-cascadia-code-nf"
+# Terminal emulator that uses platform-native UI and GPU acceleration
+cask "ghostty"
+# Web browser
+cask "google-chrome"
+# App to write, plan, collaborate, and get organised
+# cask "notion"
+# Open-source code editor
+cask "visual-studio-code"
+# Network protocol analyzer
+cask "wireshark-app"

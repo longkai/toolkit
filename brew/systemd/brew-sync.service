@@ -1,0 +1,29 @@
+# Linux systemd USER service for cross-platform Homebrew sync (pull + install + upgrade).
+#
+# Runs as your login user (NOT root) — Homebrew refuses to run as root.
+#
+# Install (edit __REPO__ first, see README):
+#   1. Replace __REPO__ with the absolute repo path, e.g. /home/kennylong/src/toolkit
+#   2. mkdir -p ~/.config/systemd/user
+#      cp brew/systemd/brew-sync.service brew/systemd/brew-sync.timer ~/.config/systemd/user/
+#   3. systemctl --user daemon-reload
+#      systemctl --user enable --now brew-sync.timer
+#   4. (headless / no active session) run once: loginctl enable-linger $USER
+#
+# Uninstall:
+#   systemctl --user disable --now brew-sync.timer
+#   rm ~/.config/systemd/user/brew-sync.{service,timer}
+#   systemctl --user daemon-reload
+
+[Unit]
+Description=Sync Homebrew packages from Brewfile (git pull + brew bundle install + brew upgrade)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Inject Homebrew into PATH (brew + nu live under the user's Linuxbrew prefix).
+ExecStart=/bin/bash -lc 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"; exec nu "__REPO__/brew/sync.nu" upgrade'
+# Log to a stable location.
+StandardOutput=append:%h/.local/state/brew-sync.log
+StandardError=append:%h/.local/state/brew-sync.log

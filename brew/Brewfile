@@ -1,0 +1,47 @@
+# Brewfile — shared entry point for cross-platform Homebrew sync
+#
+# This file holds formulae and taps that are available AND wanted on BOTH
+# macOS and Linux. Platform-specific entries live in the sibling files that
+# are loaded conditionally at the bottom:
+#
+#   Brewfile.macos  -> casks, Mac App Store apps, macOS-only formulae
+#   Brewfile.linux  -> Linux-only formulae
+#
+# Install with:
+#   brew bundle install --file=brew/Brewfile
+#
+# Homebrew's Brewfile is evaluated as Ruby and exposes OS.mac? / OS.linux?,
+# so we only pull in the sub-file that matches the current platform.
+
+# --- Common taps -----------------------------------------------------------
+# tap "homebrew/bundle"
+
+# --- Common formulae (available on both macOS and Linux) -------------------
+# Clone of cat(1) with syntax highlighting and Git integration
+brew "bat"
+# Multi-shell multi-command argument completer
+brew "carapace"
+# Simple, fast and user-friendly alternative to find
+brew "fd"
+# Syntax-highlighting pager for git and diff output
+brew "git-delta"
+# Kubernetes package manager
+brew "helm"
+#Kubernetes command-line interface
+brew "kubernetes-cli"
+# Modern shell for the GitHub era
+brew "nushell"
+# Modern replacement for ps written in Rust
+brew "procs"
+# Search tool like grep and The Silver Searcher
+brew "ripgrep"
+# Cross-shell prompt for astronauts
+brew "starship"
+# --- Platform-specific includes (do not edit below) ------------------------
+if OS.mac?
+  macos = File.expand_path("Brewfile.macos", __dir__)
+  instance_eval(File.read(macos), macos) if File.exist?(macos)
+elsif OS.linux?
+  linux = File.expand_path("Brewfile.linux", __dir__)
+  instance_eval(File.read(linux), linux) if File.exist?(linux)
+end

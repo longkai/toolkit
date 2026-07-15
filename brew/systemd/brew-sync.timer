@@ -1,0 +1,14 @@
+# Linux systemd USER timer — triggers brew-sync.service daily.
+# See brew-sync.service for install/uninstall instructions.
+
+[Unit]
+Description=Daily Homebrew sync timer
+
+[Timer]
+# Run daily at 12:30 local time.
+OnCalendar=*-*-* 12:30:00
+# If the machine was off at the scheduled time, run on next boot/login.
+Persistent=true
+
+[Install]
+WantedBy=timers.target
