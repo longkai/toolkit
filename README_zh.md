@@ -8,7 +8,7 @@
 
 [English](README.md)
 
-> **Dotfiles：** 本仓库还托管了一份极客风 [Ghostty 终端配置](ghostty/README_zh.md)（自动深浅主题、毛玻璃、全局热键、连字），以及一套 [Homebrew 跨平台同步方案](brew/README_zh.md)（拆分式 Brewfile + Git，在 macOS 与 Linux 之间同步软件，可选每日定时器）。
+> **Dotfiles：** 本仓库还托管了一份极客风 [Ghostty 终端配置](ghostty/README_zh.md)（自动深浅主题、毛玻璃、全局热键、连字），一套 [Homebrew 跨平台同步方案](brew/README_zh.md)（拆分式 Brewfile + Git，在 macOS 与 Linux 之间同步软件，可选每日定时器），以及一个 [Claude Code footer 状态栏 mod](claude/README_zh.md)（模型、context 用量、cache 命中率）。
 
 ## 内置工具
 

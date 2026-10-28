@@ -1,0 +1,16 @@
+{
+  "name": "kennylong-mods",
+  "owner": {
+    "name": "kennylong"
+  },
+  "metadata": {
+    "description": "Local Claude Code mods."
+  },
+  "plugins": [
+    {
+      "name": "context-footer",
+      "source": "./context-footer",
+      "description": "Adds the context-window percentage to the footer's session mode line."
+    }
+  ]
+}

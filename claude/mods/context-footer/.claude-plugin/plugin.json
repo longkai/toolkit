@@ -1,0 +1,8 @@
+{
+  "name": "context-footer",
+  "version": "0.1.0",
+  "description": "Adds the context-window percentage to the footer's session mode line.",
+  "author": {
+    "name": "kennylong"
+  }
+}
