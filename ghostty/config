@@ -231,10 +231,12 @@ notify-on-command-finish-after = 10s
 # Ghostty 只在「有进程正在运行」时才提示，纯 shell 提示符下直接关，不打扰。
 confirm-close-surface = true
 
-# 划词即复制（X11 风格）：选中文本存入 Ghostty 自己的「选区缓冲」，鼠标中键点击即粘贴；
-# 系统剪贴板不受影响，Cmd+C / Cmd+V 照常使用，随手选中看东西也不会冲掉剪贴板。
-#   取值：none（不复制）/ primary（当前）/ clipboard（覆盖系统剪贴板，易误冲，不推荐）/ both
-# 依赖带中键的鼠标；中键默认行为就是粘贴这个选区（middle-click-action = primary-paste）。
+# 划词即复制：选中文本存入 Ghostty 自己的「选区缓冲」，鼠标中键点击即粘贴；
+# 系统剪贴板不受影响，Cmd+C / Cmd+V 照常使用。
+#   取值：none（不复制）/ primary（当前：仅 Ghostty 私有选区）
+#         / clipboard（仅系统剪贴板）/ both（两者都写；macOS 上实际只写系统剪贴板）
+# 依赖带中键的鼠标。注意：Claude Code fullscreen 会接管鼠标，它的选中只进系统剪贴板，
+# 不会写入这里的私有选区；要在 shell 里中键粘贴，请用 Ghostty 自己拖选（tmux/nvim 里按 Shift）。
 copy-on-select = primary
 
 # 复制时去掉每行行尾空白，粘贴代码/命令更干净。
@@ -283,9 +285,11 @@ window-show-tab-bar = auto
 # （1.4 修复了自定义字体导致标题被截断的问题）。
 # window-title-font-family = Cascadia Code NF
 
-# 中键行为（1.4 新增）：默认 primary-paste，配合上面的 copy-on-select = primary
-# 即「选中 → 中键粘贴」。想让中键改为粘贴系统剪贴板可设 clipboard-paste，怕误粘贴可设 ignore。
-# middle-click-action = clipboard-paste
+# 中键行为（1.4 新增）：与上面的 copy-on-select 对齐。
+#   primary-paste   = 贴 Ghostty 私有选区（当前）
+#   clipboard-paste = 贴系统剪贴板
+#   ignore          = 忽略中键（怕误粘贴时用）
+middle-click-action = primary-paste
 
 # 失焦分屏叠加填充色：不建议开启。它是「固定颜色」，不随 Latte/Mocha 明暗
 # 主题切换，总会在其中一个主题下显得突兀（旧值 1a1b26 属 Tokyo Night，与本
