@@ -22,7 +22,7 @@ A [Ghostty](https://ghostty.org/) configuration tuned for heavy command-line use
 
 ## Requirements
 
-- **Ghostty ≥ 1.4.0** (written against 1.4.0; `copy-on-select = none`, `window-padding-balance = equal` and the unified ssh integration are 1.4+ behaviors)
+- **Ghostty ≥ 1.4.0** (written against 1.4.0; `copy-on-select = primary`, `window-padding-balance = equal` and the unified ssh integration are 1.4+ behaviors)
 - **Nushell** (default shell; the config hardcodes the absolute path `/opt/homebrew/bin/nu`)
   ```sh
   brew install nushell

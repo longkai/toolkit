@@ -231,10 +231,11 @@ notify-on-command-finish-after = 10s
 # Ghostty 只在「有进程正在运行」时才提示，纯 shell 提示符下直接关，不打扰。
 confirm-close-surface = true
 
-# 关闭「划词即复制」：选中不自动进剪贴板，需手动 Cmd+C 复制。
-# 1.4 起取值改为 none/primary/clipboard/both，旧的 false 已废弃（等价 none）；
-# macOS 默认也已是 none，这里显式写出以表明意图。
-copy-on-select = none
+# 划词即复制（X11 风格）：选中文本存入 Ghostty 自己的「选区缓冲」，鼠标中键点击即粘贴；
+# 系统剪贴板不受影响，Cmd+C / Cmd+V 照常使用，随手选中看东西也不会冲掉剪贴板。
+#   取值：none（不复制）/ primary（当前）/ clipboard（覆盖系统剪贴板，易误冲，不推荐）/ both
+# 依赖带中键的鼠标；中键默认行为就是粘贴这个选区（middle-click-action = primary-paste）。
+copy-on-select = primary
 
 # 复制时去掉每行行尾空白，粘贴代码/命令更干净。
 clipboard-trim-trailing-spaces = true
@@ -282,8 +283,8 @@ window-show-tab-bar = auto
 # （1.4 修复了自定义字体导致标题被截断的问题）。
 # window-title-font-family = Cascadia Code NF
 
-# 中键行为（1.4 新增）：默认 primary-paste；本配置关了划词复制，primary 基本为空，
-# 想让中键直接粘贴系统剪贴板可改为 clipboard-paste，怕误粘贴可设 ignore。
+# 中键行为（1.4 新增）：默认 primary-paste，配合上面的 copy-on-select = primary
+# 即「选中 → 中键粘贴」。想让中键改为粘贴系统剪贴板可设 clipboard-paste，怕误粘贴可设 ignore。
 # middle-click-action = clipboard-paste
 
 # 失焦分屏叠加填充色：不建议开启。它是「固定颜色」，不随 Latte/Mocha 明暗

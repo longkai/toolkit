@@ -22,7 +22,7 @@
 
 ## 依赖
 
-- **Ghostty ≥ 1.4.0**（配置基于 1.4.0 编写；`copy-on-select = none`、`window-padding-balance = equal`、统一的 ssh 集成等均为 1.4 起的行为）
+- **Ghostty ≥ 1.4.0**（配置基于 1.4.0 编写；`copy-on-select = primary`、`window-padding-balance = equal`、统一的 ssh 集成等均为 1.4 起的行为）
 - **Nushell**（默认 shell，配置里写死绝对路径 `/opt/homebrew/bin/nu`）
   ```sh
   brew install nushell
