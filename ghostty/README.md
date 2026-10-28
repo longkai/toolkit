@@ -12,7 +12,7 @@ A [Ghostty](https://ghostty.org/) configuration tuned for heavy command-line use
 | Default shell | `command = /opt/homebrew/bin/nu`, new windows/tabs launch nushell |
 | Global toggle (iTerm2-like) | `Option + Space` toggles a Quake-style quick terminal that drops from the top and auto-hides on blur |
 | Emacs-style line editing | `macos-option-as-alt = true`, both Options act as Meta (`M-b`/`M-f`/`M-d`, etc.); nushell's reedline uses emacs keybindings by default |
-| Frosted-glass look | `background-opacity = 0.85` + `background-blur = macos-glass-clear` (native macOS Liquid Glass) + `background-opacity-cells` (full-screen TUIs stay translucent too) + transparent titlebar + window shadow |
+| Frosted-glass look | `background-opacity = 0.75` + `background-blur = macos-glass-regular` (native macOS Liquid Glass) + `background-opacity-cells` (full-screen TUIs stay translucent too) + transparent titlebar + window shadow |
 | Font ligatures | Cascadia Code Nerd Font with `calt`/`liga` ligatures and Nerd Font glyphs |
 | Focus the active window | Translucency + blur separate foreground/background naturally; `unfocused-split-opacity` highlights the active split |
 | Command palette & power keys | `Cmd+Shift+P` command palette; `Cmd+Shift+J` dump screen+scrollback to your editor; `Cmd+Shift+Enter` zoom split; `Cmd+Shift+E` equalize splits; `Cmd+Shift+↑/↓` (or `Cmd+↑/↓`) jump between prompts; `Cmd+Shift+O` toggle frosted/opaque background |

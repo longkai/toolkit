@@ -12,7 +12,7 @@
 | 默认 Shell | `command = /opt/homebrew/bin/nu`，新窗口/标签默认启动 nushell |
 | 全局呼出/隐藏（类 iTerm2） | `Option + Space` 呼出 Quake 式 quick terminal，顶部下拉、失焦自动隐藏 |
 | Emacs 风格命令行编辑 | `macos-option-as-alt = true`，左右 Option 均作 Meta 键（`M-b`/`M-f`/`M-d` 等），nushell 的 reedline 默认 emacs 键位 |
-| 毛玻璃美观 | `background-opacity = 0.85` + `background-blur = macos-glass-clear`（macOS 原生液态玻璃）+ `background-opacity-cells`（TUI 整屏也通透）+ 透明标题栏 + 窗口阴影 |
+| 毛玻璃美观 | `background-opacity = 0.75` + `background-blur = macos-glass-regular`（macOS 原生液态玻璃）+ `background-opacity-cells`（TUI 整屏也通透）+ 透明标题栏 + 窗口阴影 |
 | 字体连字 | Cascadia Code Nerd Font，开启 `calt`/`liga` 连字与 Nerd Font 图标 |
 | 专注当前窗口 | 透明 + 毛玻璃间接区分前后台；分屏时用 `unfocused-split-opacity` 突出当前分屏 |
 | 命令面板 & 效率键 | `Cmd+Shift+P` 命令面板；`Cmd+Shift+J` 把当前屏+历史导出到编辑器；`Cmd+Shift+Enter` 缩放分屏；`Cmd+Shift+E` 均分分屏；`Cmd+Shift+↑/↓`（或 `Cmd+↑/↓`）命令间跳转；`Cmd+Shift+O` 毛玻璃/实底一键切换 |
