@@ -86,7 +86,7 @@ export function register(on) {
     if (reading.cache !== undefined) {
       const cacheColor = reading.cache >= 80 ? "suggestion" : reading.cache >= 50 ? "warning" : "error";
       children.push(Text({ color: "subtle", children: "  ·  " }));
-      children.push(Text({ color: cacheColor, children: `🎯 ${reading.cache}%` }));
+      children.push(Text({ color: cacheColor, children: `🎯 ${cacheText(reading.cache)}%` }));
     }
 
     return Box({ flexDirection: "row", children });
@@ -225,7 +225,11 @@ function modeColor(mode) {
 
 function cachePercent() {
   const total = totals.input + totals.create + totals.read;
-  return total > 0 ? Math.round((totals.read / total) * 100) : undefined;
+  return total > 0 ? (100 * totals.read) / total : undefined;
+}
+
+function cacheText(cache) {
+  return cache.toFixed(1).replace(/\.0$/, "");
 }
 
 function shortModel(model) {
