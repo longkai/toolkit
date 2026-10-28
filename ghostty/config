@@ -1,10 +1,11 @@
 # =============================================================================
-#  Ghostty 配置 —— 极客风 / 极致美观 / 高效 (macOS · Ghostty 1.3.1)
+#  Ghostty 配置 —— 极客风 / 极致美观 / 高效 (macOS · Ghostty 1.4.0)
 #  面向命令行内高频使用 Claude Code 的场景。
 #
 #  安装：软链到 ~/.config/ghostty/config（详见同目录 README_zh.md）
 #  热重载：修改后在 Ghostty 中按 Cmd+Shift+, 即可重新加载，无需重启。
 #  校验：/Applications/Ghostty.app/Contents/MacOS/ghostty +show-config
+#  查文档：/Applications/Ghostty.app/Contents/MacOS/ghostty +explain-config（1.4 新增，分页显示）
 # =============================================================================
 
 
@@ -65,14 +66,29 @@ minimum-contrast = 1.05
 #  毛玻璃与窗口：半透明 + 背景模糊，贴合 macOS 质感
 #  （前后台窗口通过通透感自然区分 —— 间接实现"专注当前窗口"）
 # -----------------------------------------------------------------------------
-# 背景半透明：数值越小越透。0.92 兼顾通透与可读性。
-background-opacity = 0.92
+# 背景半透明：数值越小越透（1 = 不透明）。0.92 几乎看不出透，0.85 才有明显
+# 毛玻璃感、且 Mocha 深底上文字依然清晰；想更透可试 0.8，再低可读性下降明显。
+# 注意（macOS）：
+#   - 改这个值必须 Cmd+Q 完全退出再打开，Cmd+Shift+, 热重载不生效；
+#   - 原生全屏下会自动禁用透明；
+#   - 「系统设置 → 辅助功能 → 显示 → 降低透明度」开启时也看不到透明效果。
+background-opacity = 0.85
 
-# 背景毛玻璃模糊半径（越大越朦胧）。
-background-blur = 20
+# 把透明度也应用到「显式设置了背景色」的单元格。默认只有窗口底色透明，
+# Claude Code / nvim / tmux / htop 这类会整屏刷背景色的 TUI 会变成一块不透明的实底，
+# 这正是「明明设了透明却不透」的常见原因。开启后整屏通透一致。
+background-opacity-cells = true
 
-# 透明背景下用线性 + gamma 校正混合，文字边缘更干净、不发灰发糊，
-# 与上面的半透明/毛玻璃搭配观感明显更好。
+# 背景模糊：直接用 macOS 原生「液态玻璃」（macOS 26+），而不是传统的高斯模糊半径。
+#   macos-glass-clear   = 高度通透的玻璃（当前选择，最「透」）
+#   macos-glass-regular = 带一定不透明度的标准玻璃，更磨砂
+# 1.4 起玻璃层叠在背景色之上（透明度仍由上面的 background-opacity 控制），并修复了
+# 「前台窗口反而比后台更不透明」的问题。
+# 想回到传统模糊：改为数值，如 background-blur = 20（官方默认，再高可能渲染异常）。
+background-blur = macos-glass-clear
+
+# 文字的 alpha 混合色彩空间：linear-corrected 消除红/绿等配色下文字边缘发暗的
+# 伪影，粗细观感与 native 基本一致（macOS 默认是 native）。
 alpha-blending = linear-corrected
 
 # 透明标题栏：内容与标题栏融为一体，配合毛玻璃更整体。
@@ -85,11 +101,16 @@ macos-window-shadow = true
 window-padding-x = 14
 window-padding-y = 10
 # 均衡分配内边距，视觉更居中。
-window-padding-balance = true
+# equal（1.4 新增）= 四边完全等距、不再限制顶部留白，比 true 更居中对称。
+window-padding-balance = equal
 
 # 极客风应用图标（Ghostty 新特性）。可选值如 official / xray / holographic /
 # microchip / blueprint / chalkboard / glass / paper / retro。这里用 X 光风。
 macos-icon = xray
+
+# 缩放窗口/拖动分屏时显示的「列×行」尺寸浮层：默认在正中央，挡住内容；
+# 挪到右下角，既能看到尺寸又不遮挡正在看的输出。
+resize-overlay-position = bottom-right
 
 
 # -----------------------------------------------------------------------------
@@ -125,8 +146,17 @@ keybind = cmd+shift+e=equalize_splits
 
 # 命令间跳转：跳到上一条/下一条命令的提示符处（快速定位长输出里的每次执行）。
 # 依赖 nushell 侧开启的 OSC 133 提示符标记（见 nushell/config.nu）。
+# 1.4 起 macOS 默认的 Cmd+↑/↓ 也恢复为 jump_to_prompt（且可重绑），两套按键等价可用。
 keybind = cmd+shift+up=jump_to_prompt:-1
 keybind = cmd+shift+down=jump_to_prompt:1
+
+# 毛玻璃 ⇄ 不透明 一键切换：看密集日志/截图分享时临时变实底，再按一次恢复通透。
+# 1.4 起作用于整个窗口的所有标签，且新窗口继承当前状态（仅 macOS）。
+# 若与默认键位冲突，用 `ghostty +list-keybinds --default` 查看后换键。
+keybind = cmd+shift+o=toggle_background_opacity
+
+# 1.4 新动作 move_tab_to_new_window（把当前标签拆成独立窗口）已内置在命令面板，
+# Cmd+Shift+P 搜 "move tab" 即可，无需额外占用快捷键。
 
 
 # -----------------------------------------------------------------------------
@@ -144,7 +174,7 @@ macos-option-as-alt = true
 
 # -----------------------------------------------------------------------------
 #  分屏：失焦分屏调暗，突出当前活动分屏
-#  （Ghostty 1.3.1 无"整窗失焦调暗"原生能力，此项仅作用于分屏；
+#  （Ghostty 1.4 仍无"整窗失焦调暗"原生能力，此项仅作用于分屏；
 #    整窗专注感由上面的透明+毛玻璃间接达成。）
 #  取值 0~1：越小失焦分屏越暗、区分越强。深色主题（Mocha）下背景本就黑，
 #  压暗天花板有限，需降狠些才明显。0.85 太亮看不出；0.75 仍偏弱；0.5 明确。
@@ -165,18 +195,31 @@ mouse-hide-while-typing = true
 # -----------------------------------------------------------------------------
 #  效率增强
 # -----------------------------------------------------------------------------
-# Shell 集成：Ghostty 官方「注入式」集成仅支持 bash/zsh/fish/elvish，不含 nushell，
-# 故 detect 对 nu 会自动跳过注入（无害）。但本仓库已在 nushell/config.nu 里开启
-# nu 内置的 shell_integration（OSC 2/7/8/133），因此标题、目录继承、超链接、
-# 以及上面的 jump_to_prompt「命令间跳转」在 nushell 下均可正常工作。
+# Shell 集成：detect 按启动的 shell 自动注入。1.4 起 Ghostty 的 ssh/sudo 包装在
+# bash/zsh/fish/elvish/Nushell 下行为一致；同时本仓库在 nushell/config.nu 里开启了
+# nu 内置的 shell_integration（OSC 2/7/8/133），标题、目录继承、超链接以及上面的
+# jump_to_prompt「命令间跳转」均由它提供。
 shell-integration = detect
-shell-integration-features = cursor,sudo,title
+
+# 功能开关（逗号分隔，no- 前缀表示关闭）：
+#   cursor       提示符处光标形状
+#   sudo         sudo 时保留 Ghostty 的 terminfo
+#   title        由集成设置窗口标题
+#   ssh-terminfo ssh 时自动把 Ghostty「自带」的 xterm-ghostty terminfo 装到远端：
+#                Ghostty 升级后自动重装，本地无需 infocmp，按 host+port 缓存；
+#                远端没有 tic 时自动退回 TERM=xterm-256color，不会把远端终端搞坏。
+#                缓存管理：ghostty +ssh-cache [host[:port]] / --prune=30d
+#   ssh-env      转发 COLORTERM / TERM_PROGRAM / TERM_PROGRAM_VERSION，
+#                远端 vim/bat/delta 等能识别真彩色；1.4 起不再覆盖 ~/.ssh/config 的 SetEnv。
+# 两个 ssh-* 在 1.4 改为统一调用 `ghostty +ssh`，取代了以往手动
+# `infocmp -x ghostty | ssh <host> -- tic -x -` 的做法。
+# 验证：在 nu 里 ssh 一台新机器后执行 `echo $TERM`，应为 xterm-ghostty（或无 tic 时为 xterm-256color）。
+shell-integration-features = cursor,sudo,title,ssh-env,ssh-terminfo
 
 # 命令跑完弹通知：fire 一个长任务后可切去别的窗口，跑完自动提醒（依赖上面
 # OSC 133 提示符标记，本仓库 nushell/config.nu 已开启）。
 #   unfocused = 仅当 Ghostty 窗口不在前台时才通知，不打扰当前操作。
 # 搭配 -after 过滤掉短命令，只对耗时 ≥10s 的命令通知（回看 Claude Code 长任务超顺手）。
-# 注：这几个 key 为较新特性；若 `ghostty +show-config` 报未知，升级到支持的版本即可。
 notify-on-command-finish = unfocused
 notify-on-command-finish-after = 10s
 
@@ -185,13 +228,18 @@ notify-on-command-finish-after = 10s
 confirm-close-surface = true
 
 # 关闭「划词即复制」：选中不自动进剪贴板，需手动 Cmd+C 复制。
-copy-on-select = false
+# 1.4 起取值改为 none/primary/clipboard/both，旧的 false 已废弃（等价 none）；
+# macOS 默认也已是 none，这里显式写出以表明意图。
+copy-on-select = none
 
 # 复制时去掉每行行尾空白，粘贴代码/命令更干净。
 clipboard-trim-trailing-spaces = true
 
-# 更大的滚动回溯缓冲（10MB），方便回看长日志。
-scrollback-limit = 10000000
+# 滚动回溯：不再显式设置。1.4 默认上限已从 10MB 提到 50MB/终端，并对空闲回溯做压缩
+# （省 70%~90% 物理内存）。旧的 scrollback-limit 已改名 scrollback-limit-bytes，
+# 如需调整可用它，或用新的 scrollback-limit-lines 按行数限制（先到者生效）：
+# scrollback-limit-bytes = 100000000
+# scrollback-limit-lines = 200000
 
 # 记住并恢复上次的窗口/会话状态。
 window-save-state = always
@@ -220,6 +268,19 @@ window-show-tab-bar = auto
 # background-image = ~/Pictures/wallpaper.png
 # background-image-opacity = 0.08
 # background-image-fit = cover
+
+# 标签页并入标题栏（Safari/Chrome 风格）：省一行纵向空间，界面更紧凑现代。
+# 1.4 修复了该模式在 macOS 27 的布局，并支持中键关标签、双击标题缩放窗口。
+# 与上面的 transparent 二选一（同一个 key）。
+# macos-titlebar-style = tabs
+
+# 窗口/标签标题字体：默认系统字体；想要极客风可改用等宽字体
+# （1.4 修复了自定义字体导致标题被截断的问题）。
+# window-title-font-family = Cascadia Code NF
+
+# 中键行为（1.4 新增）：默认 primary-paste；本配置关了划词复制，primary 基本为空，
+# 想让中键直接粘贴系统剪贴板可改为 clipboard-paste，怕误粘贴可设 ignore。
+# middle-click-action = clipboard-paste
 
 # 失焦分屏叠加填充色：不建议开启。它是「固定颜色」，不随 Latte/Mocha 明暗
 # 主题切换，总会在其中一个主题下显得突兀（旧值 1a1b26 属 Tokyo Night，与本

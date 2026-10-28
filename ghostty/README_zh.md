@@ -12,16 +12,17 @@
 | 默认 Shell | `command = /opt/homebrew/bin/nu`，新窗口/标签默认启动 nushell |
 | 全局呼出/隐藏（类 iTerm2） | `Option + Space` 呼出 Quake 式 quick terminal，顶部下拉、失焦自动隐藏 |
 | Emacs 风格命令行编辑 | `macos-option-as-alt = true`，左右 Option 均作 Meta 键（`M-b`/`M-f`/`M-d` 等），nushell 的 reedline 默认 emacs 键位 |
-| 毛玻璃美观 | 半透明背景 + 背景模糊 + 透明标题栏 + 窗口阴影 |
+| 毛玻璃美观 | `background-opacity = 0.85` + `background-blur = macos-glass-clear`（macOS 原生液态玻璃）+ `background-opacity-cells`（TUI 整屏也通透）+ 透明标题栏 + 窗口阴影 |
 | 字体连字 | Cascadia Code Nerd Font，开启 `calt`/`liga` 连字与 Nerd Font 图标 |
 | 专注当前窗口 | 透明 + 毛玻璃间接区分前后台；分屏时用 `unfocused-split-opacity` 突出当前分屏 |
-| 命令面板 & 效率键 | `Cmd+Shift+P` 命令面板；`Cmd+Shift+J` 把当前屏+历史导出到编辑器；`Cmd+Shift+Enter` 缩放分屏；`Cmd+Shift+E` 均分分屏；`Cmd+Shift+↑/↓` 命令间跳转 |
+| 命令面板 & 效率键 | `Cmd+Shift+P` 命令面板；`Cmd+Shift+J` 把当前屏+历史导出到编辑器；`Cmd+Shift+Enter` 缩放分屏；`Cmd+Shift+E` 均分分屏；`Cmd+Shift+↑/↓`（或 `Cmd+↑/↓`）命令间跳转；`Cmd+Shift+O` 毛玻璃/实底一键切换 |
+| SSH 开箱即用 | `ssh-terminfo` + `ssh-env`：ssh 时自动把 `xterm-ghostty` terminfo 装到远端并转发真彩色等环境变量，远端无 `tic` 时自动退回 `xterm-256color` |
 | Nushell 深度集成 | `nushell/config.nu` 开启内置 `shell_integration`（OSC 2/7/8/133），解锁标题、目录继承、超链接与命令跳转 |
-| 渲染优化 | `alpha-blending = linear-corrected` 让透明背景下文字更清晰；`minimum-contrast` 可读性护栏 |
+| 渲染优化 | `alpha-blending = linear-corrected` 让透明背景下文字更清晰；`minimum-contrast` 可读性护栏；`window-padding-balance = equal` 四边等距 |
 
 ## 依赖
 
-- **Ghostty ≥ 1.3.1**（配置基于 1.3.1 stable 编写并校验）
+- **Ghostty ≥ 1.4.0**（配置基于 1.4.0 编写；`copy-on-select = none`、`window-padding-balance = equal`、统一的 ssh 集成等均为 1.4 起的行为）
 - **Nushell**（默认 shell，配置里写死绝对路径 `/opt/homebrew/bin/nu`）
   ```sh
   brew install nushell
@@ -52,7 +53,7 @@ ln -sf ~/src/toolkit/ghostty/config ~/.config/ghostty/config
 
 ## 常用操作
 
-- **热重载配置**：修改配置后，在 Ghostty 中按 `Cmd + Shift + ,` 即可重新加载，无需重启。
+- **热重载配置**：修改配置后，在 Ghostty 中按 `Cmd + Shift + ,` 即可重新加载，无需重启。**例外**：`background-opacity` 在 macOS 上必须 `Cmd + Q` 完全退出再打开才生效。
 - **打开配置**：`Cmd + ,`
 - **校验配置合法性**：
   ```sh
@@ -66,18 +67,22 @@ ln -sf ~/src/toolkit/ghostty/config ~/.config/ghostty/config
 
 ## 说明与限制
 
-- **「失去焦点时调暗整个窗口」**：Ghostty 1.3.1 **没有**整窗失焦调暗的原生能力（`unfocused-split-opacity` 仅作用于分屏）。本配置改用**半透明 + 毛玻璃**让前后台窗口自然区分，达到「专注当前窗口」的近似效果。如需真正的整窗失焦变暗，可借助系统级工具（如 Hammerspoon、HazeOver）实现。
+- **「失去焦点时调暗整个窗口」**：Ghostty 1.4 仍**没有**整窗失焦调暗的原生能力（`unfocused-split-opacity` 仅作用于分屏）。本配置改用**半透明 + 毛玻璃**让前后台窗口自然区分，达到「专注当前窗口」的近似效果。如需真正的整窗失焦变暗，可借助系统级工具（如 Hammerspoon、HazeOver）实现。
 - **连字开关**：如不喜欢连字，将 `config` 中的 `font-feature = calt` / `font-feature = liga` 改为 `-calt` / `-liga` 即可。
 - **Meta 键不生效排障**：本配置已设 `macos-option-as-alt = true`，左右 Option 均作 Meta。若仍不生效，逐项排查：
   1. 确认配置**已热重载**（`Cmd + Shift + ,`）或重启 Ghostty；
   2. 确认没有其它配置源覆盖（macOS 上除 `~/.config/ghostty/config` 外，`~/Library/Application Support/com.mitchellh.ghostty/` 里若存在配置也会被加载合并，建议以软链为唯一来源）；
   3. 在 nushell 里测试 `M-b`/`M-f`（词间跳转）、`M-d`（删词）——这些是 reedline 默认 emacs 键位；
   4. 若你更想保留「右 Option 输入 `é`/`—` 等特殊字符」，把 `true` 改回 `left`，并改用**左** Option 触发 Meta。
-- **Nushell shell 集成（已接入）**：Ghostty 官方「注入式」集成不含 nu，但本仓库已在 `nushell/config.nu` 里开启 nushell 内置的 `shell_integration`，发送标准 OSC 序列：
+- **Nushell shell 集成（已接入）**：1.4 起 Ghostty 的 ssh/sudo 包装在 bash/zsh/fish/elvish/Nushell 下行为一致；提示符相关能力则由本仓库 `nushell/config.nu` 里开启的 nushell 内置 `shell_integration` 提供，发送标准 OSC 序列：
   - `osc2` 用当前目录/命令更新窗口与标签标题；
   - `osc7` 上报 cwd，新标签/分屏/quick terminal 自动继承当前目录；
   - `osc8` 输出可点击超链接；
-  - `osc133` 标记提示符边界，解锁 Ghostty 的「命令间跳转」——按 `Cmd+Shift+↑/↓` 在每次命令的提示符间跳转（回看长输出定位每次执行超方便）。
+  - `osc133` 标记提示符边界，解锁 Ghostty 的「命令间跳转」——按 `Cmd+Shift+↑/↓` 或 `Cmd+↑/↓` 在每次命令的提示符间跳转（回看长输出定位每次执行超方便）。
   <br>（`osc633` 为 VSCode 专用、`osc9_9` 为 ConEmu/Windows 专用，Ghostty 不解析会静默忽略，无影响。）
+- **SSH（`ssh-terminfo` / `ssh-env`）**：1.4 起两者统一走 `ghostty +ssh`，ssh 时自动安装 Ghostty **自带**的 terminfo（升级后自动重装、按 host+port 缓存、本地无需 `infocmp`），并转发 `COLORTERM` / `TERM_PROGRAM` / `TERM_PROGRAM_VERSION`，且不再覆盖 `~/.ssh/config` 中的 `SetEnv`。远端没有 `tic` 时自动退回 `TERM=xterm-256color`。
+  - 验证：ssh 到一台新机器后 `echo $TERM`，应为 `xterm-ghostty`（无 `tic` 时为 `xterm-256color`）。
+  - 缓存管理：`ghostty +ssh-cache`（列出）、`ghostty +ssh-cache user@host:22`（查看指定主机）、`ghostty +ssh-cache --prune=30d`（清理过期项）。
+  - 若某次 ssh 没被包装（如在脚本里调 ssh），可直接 `ghostty +ssh -- user@host` 手动走同一套流程。
 - **应用图标**：`macos-icon = xray` 为极客风格，可换成 `official`、`holographic`、`microchip`、`blueprint` 等。
 - **主题联动（Catppuccin，与 git delta 一致）**：本仓库的 `git/config` 里，[delta](https://github.com/dandavison/delta) 分页器也配了随终端明暗自动切换的 Catppuccin 主题（`detect-dark-light = auto` + `catppuccin-mocha` / `catppuccin-latte` 两个带 `dark=true`/`light=true` 的「主题」feature），与这里的 `theme = light:Catppuccin Latte, dark:Catppuccin Mocha` 一一对应：系统切浅色 → 二者都用 Latte，切深色 → 都用 Mocha，`git diff` / `git log` / `git blame` 的配色和终端始终统一。<br>**换主题时记得两边一起改**：若把本文件的 `theme` 换成别的配色，也要同步更新 `git/config` 文末的 `[delta "..."]` 两个区块（语法主题名 + 各项 hex），否则 diff 配色会与终端脱节。
