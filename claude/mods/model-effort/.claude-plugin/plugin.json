@@ -1,0 +1,8 @@
+{
+  "name": "model-effort",
+  "version": "0.1.0",
+  "description": "Forces a per-model effort level on each model request.",
+  "author": {
+    "name": "kennylong"
+  }
+}

@@ -25,6 +25,7 @@ CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 ln -sfn "$PWD/claude/mods" "$CONFIG_DIR/mods"
 claude plugin marketplace add "$CONFIG_DIR/mods"
 claude plugin install context-footer@kennylong-mods --scope user
+claude plugin install model-effort@kennylong-mods --scope user
 ```
 
 tclaude 用户把 `claude` 换成 `tclaude` 即可，参数会转发给上游。
@@ -74,4 +75,16 @@ export CLAUDE_CODE_PLUGIN_DIRS="$PWD/claude/mods/context-footer"
 - `ui.render` 里的 `children.push(...)`：emoji、顺序、分隔符和显示字段。
 - `shortModel` / `short`：模型名和 token 格式。
 
-改完在会话里执行 `/reload-plugins`。注意安装后的副本在 `$CONFIG_DIR/plugins/cache`，本仓库是源；修改后重新执行 `claude plugin install`，或用 `--plugin-dir` 直接加载源目录。
+改完在会话里执行 `/reload-plugins`。从目录 marketplace 安装的插件是就地加载本仓库的，所以改动在下次启动或 `/reload-plugins` 后生效。
+
+tclaude 下优先用 marketplace 安装：tclaude 会为自己的内置 mod 设置 `CLAUDE_CODE_PLUGIN_DIRS`，而 `settings.json` 里的同名变量会把它覆盖掉。
+
+# Effort Mod（model-effort）
+
+所有 `deepseek` 模型（包括 subagent 请求）都发 `max`。其他模型用 `/effort` 给它们选的档位，或 Claude Code 的默认值（比如 Opus 5.5 是 `medium`，Opus 5 是 `high`）。
+
+settings 存不了 `max`：`effortLevel` 和 `modelSettings.<model>.effortLevel` 最高只到 `xhigh`，所以由 mod 在请求上设置。
+
+改模型或档位就编辑 `hooks/model-effort.mjs` 里的 `RULES`，第一条匹配的规则生效。测试：`claude plugin test claude/mods/model-effort`。
+
+footer 显示每个模型上一次主线程请求的档位，跨会话保存。某个模型第一次用时，要等第一条请求后才显示。

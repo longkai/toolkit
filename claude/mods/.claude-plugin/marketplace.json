@@ -10,7 +10,12 @@
     {
       "name": "context-footer",
       "source": "./context-footer",
-      "description": "Adds the context-window percentage to the footer's session mode line."
+      "description": "Shows the model, effort, context usage, and cache hit rate in the footer."
+    },
+    {
+      "name": "model-effort",
+      "source": "./model-effort",
+      "description": "Forces a per-model effort level on each model request."
     }
   ]
 }

@@ -3,11 +3,13 @@
 let reading = null;
 let totals = { input: 0, create: 0, read: 0 };
 let sessionKey = null;
+let currentEffort;
 
 export function register(on) {
   on("session.start", async ($, e, next) => {
     const result = await next(e);
     reading = null;
+    currentEffort = await lastEffort($);
     await loadTotals($);
     await takeReading($);
     return result;
@@ -33,9 +35,23 @@ export function register(on) {
 
   on("classic.PostModelSwitch", async ($, e, next) => {
     const result = await next(e);
+    currentEffort = await lastEffort($);
     await takeReading($);
     return result;
   }).catch(($, e, next) => next(e));
+
+  on("turn.step", async function* ($, e, next) {
+    if (!e.agentId) {
+      const effort = e.effort === undefined ? undefined : String(e.effort);
+      await rememberEffort($, e.model, effort);
+      if (effort !== currentEffort) {
+        currentEffort = effort;
+        if (reading) reading.effort = effort;
+        $.ui.invalidate("ui.render");
+      }
+    }
+    yield* next(e);
+  });
 
   on("turn.complete", async ($, e, next) => {
     const result = await next(e);
@@ -73,6 +89,9 @@ export function register(on) {
 
     if (reading.model) {
       children.push(Text({ color: "autoAccept", bold: true, children: `🤖 ${reading.model}` }));
+      if (reading.effort) {
+        children.push(Text({ color: effortColor(reading.effort), children: ` ${reading.effort}` }));
+      }
       children.push(Text({ color: "subtle", children: "  ·  " }));
     }
 
@@ -93,6 +112,37 @@ export function register(on) {
   });
 }
 
+// No API reports the effort level before a request, so the footer shows the
+// level of the last main request each model made, kept across sessions.
+async function lastEffort($) {
+  try {
+    const table = await efforts($);
+    return table[modelKey(await $.session.model())];
+  } catch {
+    return undefined;
+  }
+}
+
+async function rememberEffort($, model, effort) {
+  try {
+    if (effort === undefined) return;
+    const table = await efforts($);
+    const key = modelKey(model);
+    if (table[key] === effort) return;
+    await $.store.set("effort-by-model", { ...table, [key]: effort });
+  } catch {
+    // Best-effort.
+  }
+}
+
+async function efforts($) {
+  return (await $.store.get("effort-by-model")) ?? {};
+}
+
+function modelKey(model) {
+  return String(model ?? "").toLowerCase().replace(/\[1m\]$/, "");
+}
+
 async function takeReading($) {
   try {
     const { context } = await $.session.usage();
@@ -108,6 +158,7 @@ async function takeReading($) {
     }
     reading = {
       model: shortModel(model),
+      effort: currentEffort,
       tokens: typeof context.tokens === "number" ? context.tokens : undefined,
       window: context.window,
       percent: Math.round(context.percent ?? ((context.tokens ?? 0) / context.window) * 100),
@@ -204,6 +255,17 @@ async function clearTotals($) {
     if (sessionKey) await $.store.set(sessionKey, totals);
   } catch {
     // Best-effort.
+  }
+}
+
+function effortColor(effort) {
+  switch (String(effort)) {
+    case "low": return "subtle";
+    case "medium": return "success";
+    case "high": return "warning";
+    case "xhigh": return "suggestion";
+    case "max": return "claude";
+    default: return "subtle";
   }
 }
 

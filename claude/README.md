@@ -25,6 +25,7 @@ CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 ln -sfn "$PWD/claude/mods" "$CONFIG_DIR/mods"
 claude plugin marketplace add "$CONFIG_DIR/mods"
 claude plugin install context-footer@kennylong-mods --scope user
+claude plugin install model-effort@kennylong-mods --scope user
 ```
 
 tclaude users can replace `claude` with `tclaude`; arguments are forwarded upstream.
@@ -74,4 +75,16 @@ Edit `hooks/context-footer.mjs`:
 - `children.push(...)` in `ui.render`: emoji, order, separators, and fields.
 - `shortModel` / `short`: model and token formatting.
 
-Run `/reload-plugins` after editing. Note that an installed plugin runs from `$CONFIG_DIR/plugins/cache`; this repository is the source. Re-run `claude plugin install` after changes, or load the source directory with `--plugin-dir`.
+Run `/reload-plugins` after editing. A plugin installed from a directory marketplace loads in place from this repository, so edits apply at the next session start or `/reload-plugins`.
+
+Under tclaude, prefer the marketplace install: tclaude sets `CLAUDE_CODE_PLUGIN_DIRS` for its own built-in mod, and a value in `settings.json` replaces it.
+
+# Effort Mod (model-effort)
+
+Sends `max` for every `deepseek` model, subagent requests included. Other models use the level `/effort` picked for them, or Claude Code's own default (for example `medium` for Opus 5.5, `high` for Opus 5).
+
+Settings cannot hold `max`: `effortLevel` and `modelSettings.<model>.effortLevel` accept `xhigh` at most, so the mod sets it on the request instead.
+
+Edit `RULES` in `hooks/model-effort.mjs` to change the models or the level. The first matching rule wins. Run the tests with `claude plugin test claude/mods/model-effort`.
+
+The footer shows the level of each model's last main request, kept across sessions. A model's first session shows it after its first request.

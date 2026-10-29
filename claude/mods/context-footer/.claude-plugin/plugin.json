@@ -1,7 +1,7 @@
 {
   "name": "context-footer",
   "version": "0.1.0",
-  "description": "Adds the context-window percentage to the footer's session mode line.",
+  "description": "Shows the model, effort, context usage, and cache hit rate in the footer.",
   "author": {
     "name": "kennylong"
   }
