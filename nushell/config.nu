@@ -63,6 +63,12 @@ $env.config.completions.external.completer = {|place|
     | if ($in | is-empty) { null } else { $in }
 }
 
+# 关闭补全缓存（0.116 默认 100 条）：缓存跨提示符存活，外部补全（carapace）的结果
+# 只按 cwd/PATH/config 变化失效，不感知集群等外部状态。`kubectl get pods <Tab>` 拿到
+# 的列表一旦被缓存，pod 重建后仍会补出已删除的旧名字，执行时 NotFound。0 每次都重新
+# 调用 carapace，代价是多一次子进程（kubectl 补全约几十毫秒）。
+$env.config.completions.cache_size = 0
+
 # 补全/历史菜单打开后继续输入或退格时，菜单保持打开并实时重新过滤，而不是直接关掉（0.116）。
 $env.config.completions.persistent_menus = true
 
