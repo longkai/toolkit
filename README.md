@@ -8,7 +8,7 @@ Image: `kennylongio/toolkit:latest`
 
 [中文文档](README_zh.md)
 
-> **Dotfiles:** This repo also hosts a geek-style [Ghostty terminal config](ghostty/README.md) (auto light/dark theme, frosted glass, global hotkey, ligatures), a [cross-platform Homebrew sync setup](brew/README.md) (split Brewfile + Git, keeps packages in sync between macOS and Linux, with an optional daily timer), and a [Claude Code footer mod](claude/README.md) (model, context usage, cache hit rate).
+> **Dotfiles:** This repo also hosts a geek-style [Ghostty terminal config](ghostty/README.md) (auto light/dark theme, frosted glass, global hotkey, ligatures), a [cross-platform Homebrew sync setup](brew/README.md) (split Brewfile + Git, keeps packages in sync between macOS and Linux, with an optional daily timer), a [Claude Code footer mod](claude/README.md) (model, context usage, cache hit rate), and a [Rex terminal-multiplexer config](rex/README.md) (keybindings, shortcut cheat sheet, Ghostty migration notes).
 
 ## Built-in Tools
 
