@@ -85,4 +85,3 @@ ln -sf ~/src/toolkit/ghostty/config ~/.config/ghostty/config
   - 缓存管理：`ghostty +ssh-cache`（列出）、`ghostty +ssh-cache user@host:22`（查看指定主机）、`ghostty +ssh-cache --prune=30d`（清理过期项）。
   - 若某次 ssh 没被包装（如在脚本里调 ssh），可直接 `ghostty +ssh -- user@host` 手动走同一套流程。
 - **应用图标**：`macos-icon = xray` 为极客风格，可换成 `official`、`holographic`、`microchip`、`blueprint` 等。
-- **主题联动（Catppuccin，与 git delta 一致）**：本仓库的 `git/config` 里，[delta](https://github.com/dandavison/delta) 分页器也配了随终端明暗自动切换的 Catppuccin 主题（`detect-dark-light = auto` + `catppuccin-mocha` / `catppuccin-latte` 两个带 `dark=true`/`light=true` 的「主题」feature），与这里的 `theme = light:Catppuccin Latte, dark:Catppuccin Mocha` 一一对应：系统切浅色 → 二者都用 Latte，切深色 → 都用 Mocha，`git diff` / `git log` / `git blame` 的配色和终端始终统一。<br>**换主题时记得两边一起改**：若把本文件的 `theme` 换成别的配色，也要同步更新 `git/config` 文末的 `[delta "..."]` 两个区块（语法主题名 + 各项 hex），否则 diff 配色会与终端脱节。
