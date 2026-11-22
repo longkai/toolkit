@@ -13,8 +13,7 @@
 #  主题与外观：随系统明暗模式自动切换（无需任何脚本）
 # -----------------------------------------------------------------------------
 # 浅色用 Catppuccin Latte，深色用 Catppuccin Mocha，二者均为 Ghostty 内置主题。
-# theme = light:Catppuccin Latte,dark:Catppuccin Mocha
-theme = Catppuccin Mocha
+theme = light:Catppuccin Latte,dark:Catppuccin Mocha
 
 # 使用 Display-P3 广色域，让 mac 上的配色更鲜活通透。
 window-colorspace = display-p3
