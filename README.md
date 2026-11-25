@@ -8,7 +8,7 @@ Image: `kennylongio/toolkit:latest`
 
 [中文文档](README_zh.md)
 
-> **Dotfiles:** This repo also hosts a geek-style [Ghostty terminal config](ghostty/README.md) (auto light/dark theme, frosted glass, global hotkey, ligatures), a [cross-platform Homebrew sync setup](brew/README.md) (split Brewfile + Git, keeps packages in sync between macOS and Linux, with an optional daily timer), a [Claude Code footer mod](claude/README.md) (model, context usage, cache hit rate), a [Rex terminal-multiplexer config](rex/README.md) (keybindings, shortcut cheat sheet, Ghostty migration notes), a [Git config](git/README.md) (delta pager, aliases, worktree workflow), and a [macOS Dell KB216 keyboard remap helper](misc/README.md) (Right Ctrl -> Option in Nushell, no third-party software).
+> **Dotfiles:** This repo also hosts a geek-style [Ghostty terminal config](ghostty/README.md) (auto light/dark theme, frosted glass, global hotkey, ligatures), a [cross-platform Homebrew sync setup](brew/README.md) (split Brewfile + Git, keeps packages in sync between macOS and Linux, with an optional daily timer), a [Claude Code footer mod](claude/README.md) (model, context usage, cache hit rate), a [Rex terminal-multiplexer config](rex/README.md) (keybindings, shortcut cheat sheet, Ghostty migration notes), a [Git config](git/README.md) (delta pager, aliases, worktree workflow), a [Vim config](vim/README.md) (Vim defaults plus minimal overrides, no plugins), and a [macOS Dell KB216 keyboard remap helper](misc/README.md) (Right Ctrl -> Option in Nushell, no third-party software).
 
 ## Built-in Tools
 

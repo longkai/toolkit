@@ -1,33 +1,30 @@
 " =============================================================================
 "  ~/.vimrc — 极简轻量配置
 "  仅偶尔在终端改配置文件 / 做命令行编辑，故只保留高频、无坑的核心项。
-"  基于 Vim 9.1（macOS 自带 /usr/bin/vim）编写。
+"  基于 Vim 9.0+（macOS 9.1 / Linux 9.0）编写。
 " =============================================================================
 
 " -----------------------------------------------------------------------------
 "  基础
 " -----------------------------------------------------------------------------
-set nocompatible                 " 关闭 vi 兼容，启用 Vim 完整特性
+" macOS 的系统 vimrc 会设置 skip_defaults_vim；先清掉，defaults.vim 才会生效。
+unlet! skip_defaults_vim
+source $VIMRUNTIME/defaults.vim  " 载入官方默认项；后面的设置会覆盖
+set mouse=                       " defaults.vim 9.1 默认开鼠标；显式关掉以保持跨平台一致
 set encoding=utf-8               " 统一 UTF-8，避免中文乱码
 set autoread                     " 文件被外部修改时自动重新载入
-set backspace=indent,eol,start   " 退格可删除缩进/换行/插入起点前的字符
 
 " -----------------------------------------------------------------------------
-"  界面与提示
+"  界面
 " -----------------------------------------------------------------------------
-syntax on                        " 语法高亮
 set number                       " 显示行号
 set relativenumber               " 相对行号（配合 5j / 3k 快速跳转）
-set ruler                        " 右下角显示光标行列号
-set showcmd                      " 右下角回显正在输入的命令
 set laststatus=2                 " 始终显示状态栏
-set wildmenu                     " 命令行补全用可视菜单（Tab 触发）
 set scrolloff=3                  " 光标上下保留 3 行余量，不贴屏幕边
 
 " -----------------------------------------------------------------------------
 "  缩进：统一 2 空格软 Tab（编辑 yaml / nu / lua 等配置最顺手）
 " -----------------------------------------------------------------------------
-filetype plugin indent on        " 按文件类型加载缩进/插件规则
 set expandtab                    " Tab 转空格
 set tabstop=2                    " 一个 Tab 显示为 2 空格
 set shiftwidth=2                 " 自动缩进步长 2 空格
@@ -39,7 +36,6 @@ set autoindent                   " 换行沿用上一行缩进
 " -----------------------------------------------------------------------------
 set ignorecase                   " 搜索忽略大小写……
 set smartcase                    " ……但含大写字母时自动区分
-set incsearch                    " 边输入边高亮匹配
 set hlsearch                     " 高亮所有匹配项
 nnoremap <silent> <Esc><Esc> :nohlsearch<CR>   " 连按两下 Esc 清除高亮
 
@@ -54,5 +50,5 @@ nnoremap <silent> <Esc><Esc> :nohlsearch<CR>   " 连按两下 Esc 清除高亮
 "  可选（按需取消注释；本机 vim 已含 +clipboard / +mouse）
 " -----------------------------------------------------------------------------
 " set clipboard=unnamed          " y/p 直接走系统剪贴板（与 pbcopy/pbpaste 互通）
-" set mouse=a                    " 启用鼠标（注意：终端原生「选中复制」需按住 Option）
+" set mouse=a                    " 启用鼠标（macOS 上选中复制需按 Option）
 " set cursorline                 " 高亮当前行
