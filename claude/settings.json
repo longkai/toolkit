@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": {
+    "//": "tclaude update --claude",
+    "DISABLE_TELEMETRY": "1",
+    "DISABLE_ERROR_REPORTING": "1",
+    "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY": "1",
+    "DO_NOT_TRACK": "1"
+  },
+  "includeCoAuthoredBy": false,
+  "enableArtifact": false,
+  "permissions": {
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.kube/**)",
+      "Read(~/.gnupg/**)",
+      "Read(~/.netrc)",
+      "Read(~/.config/gh/**)",
+      "Read(~/.git-credentials)",
+      "Read(~/.config/go/env)",
+      "Read(~/.npmrc)",
+      "Read(~/.docker/config.json)"
+    ],
+    "defaultMode": "auto"
+  },
+  "enabledPlugins": {
+    "gopls-lsp@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "model-effort@kennylong-mods": true,
+    "context-footer@kennylong-mods": true
+  },
+  "extraKnownMarketplaces": {
+    "kennylong-mods": {
+      "source": {
+        "source": "github",
+        "repo": "longkai/toolkit"
+      },
+      "autoUpdate": true
+    }
+  },
+  "modelSettings": {
+    "claude-opus-5-5": {
+      "effortLevel": "medium",
+      "autoCompactWindow": 500000
+    }
+  },
+  "autoCompactWindow": 786432,
+  "tui": "fullscreen",
+  "skipWorkflowUsageWarning": true,
+  "theme": "auto",
+  "pluginConfigs": {
+    "tclaude@inline": {
+      "options": {
+        "cacheTtl": "on",
+        "cacheTtlMinutes": 30
+      }
+    }
+  }
+}

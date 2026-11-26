@@ -43,6 +43,43 @@ load-env {
     NU_LOG_LEVEL: DEBUG # verbose; s3 presign also logs its signing key
 }
 
+# Claude Code：Linux 继续 deepseek，macOS 用 hy4；Keychain 只存本机凭证，仓库不落明文。
+let is_macos = $nu.os-info.name == "macos"
+let model = if $is_macos { "hy4" } else { "claude-deepseek-v4.1-flash[1m]" }
+
+$env.ANTHROPIC_DEFAULT_OPUS_MODEL = $model
+$env.ANTHROPIC_DEFAULT_SONNET_MODEL = $model
+$env.ANTHROPIC_DEFAULT_HAIKU_MODEL = $model
+$env.CLAUDE_CODE_SUBAGENT_MODEL = $model
+$env.CLAUDE_CODE_AUTO_MODE_MODEL = $model
+# Explicit session model: beats settings `model: "haiku"`, so the footer shows the real model.
+$env.ANTHROPIC_MODEL = $model
+
+# tclaude wrapper telemetry off; Claude Code's own privacy keys live in claude/settings.json.
+$env.TCLAUDE_DISABLE_TELEMETRY = "1"
+
+if $is_macos {
+    # macOS 的兼容网关不透传服务器审查；改用 cc 自己的分类器。
+    $env.CLAUDE_CODE_AUTO_MODE_SERVER = "0"
+
+    # hy4 走 Anthropic 兼容网关；首次写入/更新：
+    #   security add-generic-password -U -s anthropic-api-key -a $env.USER -w
+    #   security add-generic-password -U -s anthropic-base-url -a $env.USER -w
+    # -w 放末尾会提示输入，值不进 shell history。
+    let keychain_get = {|service|
+        try { security find-generic-password -s $service -a $env.USER -w | str trim } catch { "" }
+    }
+    let key = (do $keychain_get "anthropic-api-key")
+    let base = (do $keychain_get "anthropic-base-url")
+
+    if ($key | is-not-empty) and ($base | is-not-empty) {
+        $env.ANTHROPIC_API_KEY = $key
+        $env.ANTHROPIC_BASE_URL = $base
+    } else if ($key | is-not-empty) or ($base | is-not-empty) {
+        print -e "claude: set both anthropic-api-key and anthropic-base-url in Keychain"
+    }
+}
+
 # carapace：补全器直接写在 config.nu（0.116 的 `{|place|}` 新 API），不再生成并 source
 # `carapace _carapace nushell` 的旧版 init（它只会注册已弃用的 `{|spans|}` 补全器）。
 # 这里只保留 carapace 自身读取的桥接配置。
