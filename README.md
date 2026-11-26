@@ -197,17 +197,17 @@ Import images from URLs or local tarballs into the current node's container runt
 "https://cos.ap-guangzhou.myqcloud.com/..." | oci import daemonset
 
 # Specify namespace and label
-"https://..." | oci import daemonset -n kube-system -l name=toolkit
+"https://..." | oci import daemonset -n kube-system -l app=toolkit,role=daemonset
 
 # Batch import
-["https://url1", "https://url2"] | oci import daemonset -n default -l name=toolkit
+["https://url1", "https://url2"] | oci import daemonset -n default -l app=toolkit,role=daemonset
 ```
 
 Parameters:
 
 | Parameter | Description |
 |-----------|-------------|
-| `-l, --selector` | Pod label selector, default `name=toolkit` |
+| `-l, --selector` | Pod label selector, default `app=toolkit,role=daemonset` |
 | `-n, --namespace` | Pod namespace |
 
 ---
@@ -286,7 +286,7 @@ let images = ["nginx:1.25", "redis:7.2"] | oci push s3
 # Returns: [{url: "https://...", image: "nginx:1.25"}, ...]
 
 # 2. In DaemonSet toolkit, batch import to all nodes
-$images | get url | oci import daemonset -n default -l name=toolkit
+$images | get url | oci import daemonset -n default -l app=toolkit,role=daemonset
 ```
 
 ### Cross-Registry Image Transfer

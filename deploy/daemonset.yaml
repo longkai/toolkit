@@ -11,15 +11,19 @@ kind: DaemonSet
 metadata:
   name: toolkit
   labels:
-    k8s-app: toolkit
+    app: toolkit
+    role: daemonset
 spec:
+  # Keep this selector in sync with `oci import daemonset` (-l app=toolkit,role=daemonset).
   selector:
     matchLabels:
-      name: toolkit
+      app: toolkit
+      role: daemonset
   template:
     metadata:
       labels:
-        name: toolkit
+        app: toolkit
+        role: daemonset
     spec:
       containers:
       - command:

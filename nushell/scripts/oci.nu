@@ -376,10 +376,10 @@ def resolve-hosts []: any -> any {
 
 # Import images to all the k8s daemonset nodes. Note the daemonset must mount containerd socket and `ctr` binary.
 #
-@example "download an image tarball url then import into all k8s daemonset nodes" { "https://..." | oci import daemonset -n default -l name=toolkit } --result [docker.io/library/app:latest]
-@example "like above, but with a list of url" { "[https://...]" | oci import daemonset -n default -l name=toolkit } --result [[docker.io/library/app:latest]]
+@example "download an image tarball url then import into all k8s daemonset nodes" { "https://..." | oci import daemonset -n default -l app=toolkit,role=daemonset } --result [docker.io/library/app:latest]
+@example "like above, but with a list of url" { "[https://...]" | oci import daemonset -n default -l app=toolkit,role=daemonset } --result [[docker.io/library/app:latest]]
 export def "import daemonset" [
-    --selector (-l): string = 'name=toolkit' # the pod labels of the toolkit daemonset
+    --selector (-l): string = 'app=toolkit,role=daemonset' # the pod labels of the toolkit daemonset
     --namespace (-n): string = '' # the namespace of the toolkit pod
 ]: [
     string -> string

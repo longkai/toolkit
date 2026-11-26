@@ -197,17 +197,17 @@ s3 presign "s3://my-bucket/path/to/file.txt" --method PUT --expires-in 2hr
 "https://cos.ap-guangzhou.myqcloud.com/..." | oci import daemonset
 
 # 指定 namespace 和 label
-"https://..." | oci import daemonset -n kube-system -l name=toolkit
+"https://..." | oci import daemonset -n kube-system -l app=toolkit,role=daemonset
 
 # 批量导入
-["https://url1", "https://url2"] | oci import daemonset -n default -l name=toolkit
+["https://url1", "https://url2"] | oci import daemonset -n default -l app=toolkit,role=daemonset
 ```
 
 参数说明：
 
 | 参数 | 说明 |
 |------|------|
-| `-l, --selector` | Pod label selector，默认 `name=toolkit` |
+| `-l, --selector` | Pod label selector，默认 `app=toolkit,role=daemonset` |
 | `-n, --namespace` | Pod 所在 namespace |
 
 ---
@@ -286,7 +286,7 @@ let images = ["nginx:1.25", "redis:7.2"] | oci push s3
 # 返回: [{url: "https://...", image: "nginx:1.25"}, ...]
 
 # 2. 在 DaemonSet toolkit 中，批量导入到所有节点
-$images | get url | oci import daemonset -n default -l name=toolkit
+$images | get url | oci import daemonset -n default -l app=toolkit,role=daemonset
 ```
 
 ### 镜像搬运（跨 Registry）

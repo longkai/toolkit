@@ -99,7 +99,7 @@ RUN libc=gnu; \
     rm -rf carapace.tgz
 
 ADD nushell .config/nushell
-ADD .vimrc .vimrc
+ADD vim/vimrc .vimrc
 
 # fix mysql client cjk encoding display issue
 ENV LANG="C.utf8"
